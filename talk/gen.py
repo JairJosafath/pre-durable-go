@@ -87,7 +87,7 @@ GROUPS = {
     'how': ['Code', 'Play', 'CheckCircle'],
     'sdk': ['Settings', 'Warning', 'Database', 'Activity'],
     'go': ['Code', 'Lightning', 'Warning', 'Wrench', 'Lightbulb'],
-    'demo': ['Cloud', 'Code'],
+    'demo': ['Cloud', 'Code', 'Database'],
 }
 import math
 ACX, ACY, AR, AOFF, ASTEP = 1269, 657, 658, 60, 12
@@ -402,7 +402,7 @@ ORDER = [('cover', None, 0, ''), ('why', None, 0, ''),
     ('go-i-tools', 'go', 3, 'i'), ('go-tooling', 'go', 3, ''), ('go-test', 'go', 3, ''),
     ('go-i-diff', 'go', 4, 'i'), ('go-gotchas', 'go', 4, ''),
     ('demo', 'demo', 0, ''), ('demo-handler', 'demo', 1, ''), ('demo-parallel', 'demo', 1, ''), ('demo-review', 'demo', 1, ''),
-    ('demo-data', 'demo', 1, 'h'), ('wrap', None, 0, '')]      # h: kept in the deck but skipped when presenting
+    ('demo-data', 'demo', 2, ''), ('wrap', None, 0, '')]      # flag h would keep a slide in the deck but skip it when presenting
 
 changed = []
 for n, (sid, group, idx, fl) in enumerate(ORDER):
