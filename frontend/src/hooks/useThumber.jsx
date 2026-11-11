@@ -35,6 +35,12 @@ export default function useThumber(token, search) {
   // item received; sending it back asks for the page after it.
   const [next, setNext] = useState(null);
 
+  // Keys of uploads the user just approved or rejected. The decision resumes
+  // the suspended execution in the background, so the catalog still says
+  // PENDING_REVIEW for a moment. Until the outcome is in, such a file counts
+  // as being processed, not as waiting for a review.
+  const [decided, setDecided] = useState([]);
+
   const fetchPage = useCallback(
     async (after) => {
       const params = new URLSearchParams();
@@ -61,7 +67,10 @@ export default function useThumber(token, search) {
 
     const page = await fetchPage(null);
 
+    const awaitsReview = (key) => page.found.some((file) => file.key === key && file.status === "PENDING_REVIEW");
+
     setFiles(unique(page.found));
+    setDecided((keys) => keys.filter(awaitsReview));
     setNext(page.next);
     setLoading(false);
     setReload(false);
@@ -84,8 +93,16 @@ export default function useThumber(token, search) {
     if (reload) load();
   }, [reload, load]);
 
+  const expectOutcome = useCallback((key) => {
+    setDecided((keys) => [...keys, key]);
+    setReload(true);
+  }, []);
+
+  const awaitingOutcome = (file) => file.status === "PENDING_REVIEW" && decided.includes(file.key);
+  const inProgress = (file) => file.status === "PROCESSING" || awaitingOutcome(file);
+
   // While the pipeline is still working on an upload, keep looking.
-  const processing = files.some((file) => file.status === "PROCESSING");
+  const processing = files.some(inProgress);
   useEffect(() => {
     if (!processing) return undefined;
 
@@ -131,8 +148,9 @@ export default function useThumber(token, search) {
 
   return {
     thumbs: files.filter((file) => file.status === "READY").map(withUrl),
-    pending: files.filter((file) => file.status === "PENDING_REVIEW").map(withUrl),
-    processing: files.filter((file) => file.status === "PROCESSING"),
+    pending: files.filter((file) => file.status === "PENDING_REVIEW" && !awaitingOutcome(file)).map(withUrl),
+    processing: files.filter(inProgress),
+    expectOutcome,
     loading,
     hasMore: Boolean(next),
     loadMore,

@@ -14,7 +14,7 @@ export default function ReviewPanel({ token, pending, onDecided }) {
     setBusy(file.key);
     await api("/reviews", { token, method: "POST", body: { key: file.key, approved } });
     setBusy("");
-    onDecided();
+    onDecided(file);
   }
 
   return (

@@ -3,7 +3,7 @@ import useThumber from "@/hooks/useThumber";
 import ReviewPanel from "@/components/review.panel";
 
 export default function PhotosContainer({ token, reload, setReload: setUploaded }) {
-  const { thumbs, pending, processing, photo, setPhoto, setReload, hasMore, loadMore } = useThumber(token, "");
+  const { thumbs, pending, processing, expectOutcome, photo, setPhoto, setReload, hasMore, loadMore } = useThumber(token, "");
 
   // A finished upload asks for a fresh listing.
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function PhotosContainer({ token, reload, setReload: setUploaded 
         </p>
       )}
 
-      <ReviewPanel token={token} pending={pending} onDecided={() => setReload(true)} />
+      <ReviewPanel token={token} pending={pending} onDecided={(file) => expectOutcome(file.key)} />
 
       <main className="grid grid-cols-4 gap-1 auto-rows-max p-2 mx-12">
         {thumbs?.map(({ title, url }, index) => (
