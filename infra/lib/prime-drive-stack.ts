@@ -1,4 +1,4 @@
-import { CfnOutput, Stack, StackProps } from 'aws-cdk-lib/core';
+import { Annotations, CfnOutput, Stack, StackProps } from 'aws-cdk-lib/core';
 import { Construct } from 'constructs';
 import { Catalog } from './constructs/catalog';
 import { Identity } from './constructs/identity';
@@ -13,6 +13,9 @@ import { UploadPipeline } from './constructs/upload-pipeline';
 export class PrimeDriveStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    // The Go build flags are constants in lib/constructs/go-function.ts.
+    Annotations.of(this).acknowledgeWarning('@aws-cdk/aws-lambda-go-alpha:goBuildFlagsSecurityWarning');
 
     const storage = new Storage(this, 'Storage');
     const catalog = new Catalog(this, 'Catalog');

@@ -57,7 +57,6 @@ export class UploadPipeline extends Construct {
       },
       environment: {
         TABLE_NAME: props.table.tableName,
-        THUMBNAIL_BUCKET: props.thumbnails.bucketName,
         THUMBNAILER_FUNCTION: thumbnailer.currentVersion.functionArn,
         REVIEW_TIMEOUT: `${reviewTimeout.toSeconds()}s`,
       },
