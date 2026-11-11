@@ -108,8 +108,8 @@ def arc_svg(s, foc, oc='#006E8A'):
     gx, gy = pt(s[6], s[2] + s[7])
     out = ('<svg id="nav-arc-s" aria-label="Topic navigation" style="position:absolute;left:0px;top:0px" width="1920" height="540" viewBox="0 0 1920 540"><defs>'
            f'<radialGradient id="ag" gradientUnits="userSpaceOnUse" cx="{gx:.1f}" cy="{gy:.1f}" r="{s[8]}">'
-           '<stop offset="0" stop-color="rgb(0,173,216)" stop-opacity="0.8"/><stop offset="0.32" stop-color="rgb(255,122,154)" stop-opacity="0.45"/>'
-           '<stop offset="0.62" stop-color="rgb(242,166,90)" stop-opacity="0.3"/><stop offset="1" stop-color="rgb(242,166,90)" stop-opacity="0"/></radialGradient>')
+           '<stop offset="0" stop-color="rgb(0,173,216)" stop-opacity="0.8"/><stop offset="0.32" stop-color="rgb(0,173,216)" stop-opacity="0.42"/>'
+           '<stop offset="0.62" stop-color="rgb(0,173,216)" stop-opacity="0.2"/><stop offset="1" stop-color="rgb(0,173,216)" stop-opacity="0"/></radialGradient>')
     icons = ''
     for j in range(5):
         x, y = pt(s[5] + j * s[4], s[3])
