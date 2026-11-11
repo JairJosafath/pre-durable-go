@@ -1,0 +1,74 @@
+[
+  {
+    "type": "STEP",
+    "subType": "Step",
+    "name": "register-upload",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "CONTEXT",
+    "subType": "RunInChildContext",
+    "name": "analyze-image",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "CHAINED_INVOKE",
+    "subType": "ChainedInvoke",
+    "name": "generate-thumbnail",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "CONTEXT",
+    "subType": "RunInChildContext",
+    "name": "await-analysis-and-thumbnail",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "STEP",
+    "subType": "Step",
+    "name": "detect-labels",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "STEP",
+    "subType": "Step",
+    "name": "detect-moderation",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "CONTEXT",
+    "subType": "Map",
+    "name": "index-labels",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "CONTEXT",
+    "subType": "MapIteration",
+    "name": "Cat",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "CONTEXT",
+    "subType": "MapIteration",
+    "name": "Pet",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "STEP",
+    "subType": "Step",
+    "name": "save-index-entry",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "STEP",
+    "subType": "Step",
+    "name": "save-index-entry",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "STEP",
+    "subType": "Step",
+    "name": "mark-ready",
+    "status": "SUCCEEDED"
+  }
+]
