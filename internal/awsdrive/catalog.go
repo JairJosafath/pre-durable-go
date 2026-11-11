@@ -13,10 +13,17 @@ import (
 	"gdf/internal/drive"
 )
 
-// Catalog keeps file records and label index entries in one DynamoDB table.
+// Catalog keeps everything about a user's drive in one DynamoDB table, in the
+// user's partition. Each question the application asks is one query on a
+// sort-key prefix:
 //
-//	pk = user#<owner>   sk = #file#<key>            one item per upload
-//	pk = user#<owner>   sk = #index#<label>#<key>   one item per detected label
+//	pk = user#<owner>   sk = #file#<key>            my files
+//	pk = user#<owner>   sk = #index#<label>#<key>   files with a label
+//	pk = user#<owner>   sk = #label#<label>         the labels I have
+//
+// Writes happen once per upload, in the background; reads happen on every
+// search. So the pipeline writes one small item per answer, and no read ever
+// needs a second lookup or a scan through a growing list.
 type Catalog struct {
 	client *dynamodb.Client
 	table  string
@@ -35,6 +42,15 @@ type fileItem struct {
 	SK string `json:"sk"`
 }
 
+// labelItem describes a label the user has, once, however many files carry it.
+type labelItem struct {
+	PK         string   `json:"pk"`
+	SK         string   `json:"sk"`
+	Label      string   `json:"label"`
+	Categories []string `json:"categories,omitempty"`
+	Aliases    []string `json:"aliases,omitempty"`
+}
+
 // indexItem makes one upload findable by one label.
 type indexItem struct {
 	PK         string  `json:"pk"`
@@ -50,15 +66,27 @@ func (c *Catalog) SaveFile(ctx context.Context, file drive.File) error {
 	return c.put(ctx, fileItem{File: file, PK: userKey(file.Owner), SK: fileKey(file.Key)})
 }
 
-// IndexLabel makes the upload findable by the label. The item's key is the
-// label and the object together, so indexing twice leaves a single item.
+// IndexLabel makes the upload findable by the label and records that the
+// user has this label. Both items are keyed by what they describe, so writing
+// them again leaves the table as it was: the call is safe to retry.
 func (c *Catalog) IndexLabel(ctx context.Context, upload drive.Upload, label drive.Label) error {
-	return c.put(ctx, indexItem{
+	entry := indexItem{
 		PK:         userKey(upload.Owner),
 		SK:         indexKey(label.Name, upload.Key),
 		Key:        upload.Key,
 		Label:      label.Name,
 		Confidence: label.Confidence,
+	}
+	if err := c.put(ctx, entry); err != nil {
+		return err
+	}
+
+	return c.put(ctx, labelItem{
+		PK:         userKey(upload.Owner),
+		SK:         labelKey(label.Name),
+		Label:      label.Name,
+		Categories: label.Categories,
+		Aliases:    label.Aliases,
 	})
 }
 
@@ -110,6 +138,8 @@ func useJSONTagsToDecode(options *attributevalue.DecoderOptions) { options.TagKe
 func userKey(owner string) string { return "user#" + owner }
 
 func fileKey(objectKey string) string { return "#file#" + objectKey }
+
+func labelKey(label string) string { return "#label#" + strings.ToLower(label) }
 
 func indexKey(label, objectKey string) string {
 	return "#index#" + strings.ToLower(label) + "#" + objectKey

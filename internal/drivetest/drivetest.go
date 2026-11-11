@@ -74,14 +74,19 @@ func (v *Vision) DetectModerationLabels(context.Context, drive.Object) ([]drive.
 
 // Catalog keeps file records and label index entries in maps.
 type Catalog struct {
-	mu    sync.Mutex
-	files map[string]drive.File
-	index map[string][]string
+	mu     sync.Mutex
+	files  map[string]drive.File
+	index  map[string][]string
+	labels map[string]drive.Label
 }
 
 // NewCatalog returns an empty catalog.
 func NewCatalog() *Catalog {
-	return &Catalog{files: map[string]drive.File{}, index: map[string][]string{}}
+	return &Catalog{
+		files:  map[string]drive.File{},
+		index:  map[string][]string{},
+		labels: map[string]drive.Label{},
+	}
 }
 
 // SaveFile stores the record, replacing any earlier one for the same key.
@@ -94,8 +99,8 @@ func (c *Catalog) SaveFile(_ context.Context, file drive.File) error {
 	return nil
 }
 
-// IndexLabel makes the upload findable by the label. Indexing the same pair
-// twice leaves a single entry, like the real catalog.
+// IndexLabel makes the upload findable by the label and remembers the label.
+// Indexing the same pair twice leaves a single entry, like the real catalog.
 func (c *Catalog) IndexLabel(_ context.Context, upload drive.Upload, label drive.Label) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -104,7 +109,19 @@ func (c *Catalog) IndexLabel(_ context.Context, upload drive.Upload, label drive
 		c.index[label.Name] = append(c.index[label.Name], upload.Key)
 	}
 
+	c.labels[label.Name] = label
+
 	return nil
+}
+
+// Label returns what the catalog knows about a label the user has.
+func (c *Catalog) Label(name string) (drive.Label, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	label, ok := c.labels[name]
+
+	return label, ok
 }
 
 // File returns the stored record for an object key.

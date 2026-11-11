@@ -50,6 +50,19 @@ func TestConfidentUploadIsPublished(t *testing.T) {
 	durabletest.AssertGoldenSignatureUnordered(t, result, filepath.Join("testdata", "published.golden.json"))
 }
 
+func TestLabelsAreCataloguedWithTheirAliases(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t, aCat())
+	succeededWith(t, h.run(t, catPhoto))
+
+	// The label itself is catalogued once, with its aliases, so the labels a
+	// user has can be listed without reading every indexed file.
+	if cat, ok := h.catalog.Label("Cat"); !ok || !slices.Equal(cat.Aliases, []string{"Kitty"}) {
+		t.Errorf("label Cat = %+v, want it catalogued with its alias", cat)
+	}
+}
+
 func TestFlakyVisionIsRetriedWithoutRealWaiting(t *testing.T) {
 	t.Parallel()
 

@@ -42,7 +42,7 @@ func (v *Vision) DetectLabels(ctx context.Context, image drive.Object) ([]drive.
 
 	labels := make([]drive.Label, 0, len(output.Labels))
 	for _, label := range output.Labels {
-		labels = append(labels, toLabel(label.Name, label.Confidence))
+		labels = append(labels, describe(label))
 	}
 
 	return labels, nil
@@ -72,6 +72,22 @@ func s3Image(image drive.Object) *types.Image {
 		Bucket: aws.String(image.Bucket),
 		Name:   aws.String(image.Key),
 	}}
+}
+
+// describe keeps the categories and aliases Rekognition knows for a label;
+// the catalog stores them once per label.
+func describe(label types.Label) drive.Label {
+	described := toLabel(label.Name, label.Confidence)
+
+	for _, category := range label.Categories {
+		described.Categories = append(described.Categories, aws.ToString(category.Name))
+	}
+
+	for _, alias := range label.Aliases {
+		described.Aliases = append(described.Aliases, aws.ToString(alias.Name))
+	}
+
+	return described
 }
 
 func toLabel(name *string, confidence *float32) drive.Label {

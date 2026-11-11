@@ -136,8 +136,8 @@ func uploaded(key string) events.S3Event {
 
 func aCat() *drivetest.Vision {
 	return &drivetest.Vision{Labels: []drive.Label{
-		{Name: "Cat", Confidence: 98},
-		{Name: "Pet", Confidence: 91},
+		{Name: "Cat", Confidence: 98, Categories: []string{"Animals and Pets"}, Aliases: []string{"Kitty"}},
+		{Name: "Pet", Confidence: 91, Categories: []string{"Animals and Pets"}},
 	}}
 }
 

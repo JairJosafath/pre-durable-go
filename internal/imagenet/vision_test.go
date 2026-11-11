@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"gdf/internal/drive"
@@ -74,7 +75,7 @@ func TestDetectLabelsReturnsTheMostLikelyClasses(t *testing.T) {
 	}
 
 	want := []drive.Label{{Name: "tabby", Confidence: 82}, {Name: "tiger cat", Confidence: 11}}
-	if len(labels) != len(want) || labels[0] != want[0] || labels[1] != want[1] {
+	if !reflect.DeepEqual(labels, want) {
 		t.Errorf("labels = %+v, want %+v", labels, want)
 	}
 }
@@ -90,7 +91,7 @@ func TestDetectModerationLabelsMapsClassesToCategories(t *testing.T) {
 	}
 
 	// Beer glass and beer bottle are both alcohol: one flag, with the higher confidence.
-	if len(flags) != 1 || flags[0] != (drive.Label{Name: "Alcohol", Confidence: 64}) {
+	if want := []drive.Label{{Name: "Alcohol", Confidence: 64}}; !reflect.DeepEqual(flags, want) {
 		t.Errorf("flags = %+v, want one Alcohol flag at 64%%", flags)
 	}
 }

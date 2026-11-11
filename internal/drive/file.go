@@ -16,6 +16,10 @@ const (
 type Label struct {
 	Name       string  `json:"name"`
 	Confidence float64 `json:"confidence"`
+	// Categories group related labels, such as "Animals and Pets".
+	Categories []string `json:"categories,omitempty"`
+	// Aliases are other names for the same thing, such as "Kitty" for "Cat".
+	Aliases []string `json:"aliases,omitempty"`
 }
 
 // File is the catalog record of an upload.
