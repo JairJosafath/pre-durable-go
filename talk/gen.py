@@ -98,8 +98,8 @@ GLYPH = [
     '<rect x="-23" y="-18" width="46" height="36" rx="6"/><path d="M-13 -7 L-5 0 L-13 7 M1 8 L12 8"/>',
     '<path d="M-7.65 5.51 A13 13 0 1 1 7.91 5.32"/><path d="M-6 13 L6 13 M-4 20 L4 20"/>',
 ]
-# Brand logos, copied from github.com/glincker/thesvg (public/icons/<name>) into logos/. Trademarks belong to their owners.
-# The Go gopher was designed by Renee French and is licensed CC BY 4.0.
+# AWS marks, copied from github.com/glincker/thesvg (public/icons/<name>) into logos/. Trademarks belong to their owners.
+# The gopher glyph below is our own line drawing of the Go gopher, a character designed by Renee French (CC BY 4.0).
 LG = S + '/logos'
 def logo_inner(name):
     t = rd(f'{LG}/{name}.svg')
@@ -119,15 +119,16 @@ def mono_aws(name, col):
 def logo_svg(name, label, x, y, h, col='#006E8A'):
     return (f'<svg id="logo-{name}" aria-label="{label}" style="position:absolute;left:{x}px;top:{y}px" width="{h}" height="{h}" '
             f'viewBox="9 9 62 62">{mono_aws(name, col)}</svg>\n')
-def gopher_g(cx, cy, h, body, ink):
-    # Two-colour gopher: a flat silhouette in `body`, outline and features in `ink` (thickened a little so they
-    # survive at icon size).
-    w0, h0, t = logo_inner('gopher')
-    t = re.sub(r'<(path|ellipse)(?![^>]*fill=)', f'<\\1 fill="{ink}" stroke="{ink}" stroke-width="3"', t)
-    t = t.replace('fill="#231f20"', f'fill="{ink}"')
-    for c in ('#69d7e2', '#f6d2a2', '#fff'): t = t.replace(f'fill="{c}"', f'fill="{body}"')
-    k = h / h0
-    return f'<g transform="translate({cx - w0 * k / 2:.1f} {cy - h / 2:.1f}) scale({k:.4f})">{t}</g>'
+# The gopher as a line icon, drawn in the same language as the topic glyphs (round caps, no fill). Box: 60 x 86 around 0,0.
+GOPHER_GLYPH = ('<path d="M-24 -16 A24 24 0 0 1 24 -16 V28 A12 12 0 0 1 12 40 H-12 A12 12 0 0 1 -24 28 Z"/>'
+                '<path d="M-21.3 -27 A6 6 0 1 1 -15.2 -34.6 M21.3 -27 A6 6 0 1 0 15.2 -34.6"/>'
+                '<circle cx="-10" cy="-18" r="6.5"/><circle cx="10" cy="-18" r="6.5"/>'
+                '<circle cx="-8.5" cy="-17" r="2" fill="@C@" stroke="none"/><circle cx="11.5" cy="-17" r="2" fill="@C@" stroke="none"/>'
+                '<path d="M-3 -6.5 V-1.5 H3 V-6.5"/>'
+                '<path d="M-24 4 L-30 8 M24 4 L30 8 M-12 40 L-17 45 M12 40 L17 45"/>')
+def gopher_g(x, y, sc, col):
+    return (f'<g transform="translate({x} {y}) scale({sc})" fill="none" stroke="{col}" stroke-width="4" '
+            f'stroke-linecap="round" stroke-linejoin="round">{GOPHER_GLYPH.replace("@C@", col)}</g>')
 LOGOS = {'demo-data': ('aws-dynamodb', 'Amazon DynamoDB', 1720, 112, 72)}   # why.html (hand-written) carries aws-lambda at the same spot
 # Arc states: [centre x, centre y, radius, icon radius, icon step, angle of first icon, glow angle, glow distance beyond the arc, glow radius]
 BIGR = [960, 1100, 1157, 1217, 5.2, -44, -37, 160, 520]
@@ -155,7 +156,7 @@ def arc_svg(s, foc, oc='#006E8A', show_icons=True, extra=''):
                   f'stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">{GLYPH[j].replace("@C@", col)}</g>')
     out += (f'</defs><path fill-rule="evenodd" fill="url(#ag)" d="M0 0 H1920 V540 H0 Z M{s[0] - s[2]} {s[1]} a{s[2]} {s[2]} 0 1 0 {2 * s[2]} 0 a{s[2]} {s[2]} 0 1 0 {-2 * s[2]} 0 Z"/>')
     return out + icons + extra + '</svg>\n'
-GOPHER = (1800, 96, 112, '#F6F4EE', '#006E8A')   # centre x, centre y, height, body, ink of the gopher in the opener's arc
+GOPHER = (1703, 114, 1, '#F6F4EE')   # x, y, scale, colour of the gopher glyph: it sits on the opener's arc where the topic icons would be
 def arc_nav(idx, prev, teal=False, intro=False):
     # Go section. Every slide carries a still SVG of the arc; topic cards also carry a canvas that paints over
     # it and animates: start state -> big arc on this topic -> ring and line -> shrink to the compact arc.
