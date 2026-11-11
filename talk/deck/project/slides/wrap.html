@@ -1,0 +1,45 @@
+<section id="wrap" style="background:#F6F4EE;color:#101820;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 112px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">Wrap-up</p>
+<h2 style="font-size:64px;font-weight:600;line-height:1.1">Three things to take away</h2>
+</div>
+<x-embed style="position:absolute;left:128px;top:264px;width:1664px;height:560px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
+<canvas id="c"></canvas>
+<script>
+(function(){
+var c=document.getElementById('c'),g=c.getContext('2d'),BW=1664,BH=560,END=10;
+var F=parseFloat((location.hash.match(/t=([\d.]+)/)||[])[1]);
+function fit(){var d=Math.min(window.devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;g.setTransform(c.width/BW,0,0,c.height/BH,0,0)}
+function cl(v){return Math.max(0,Math.min(1,v))}
+function P(t,a,b){return cl((t-a)/(b-a))}
+function eo(k){return 1-Math.pow(1-k,3)}
+function bk(k){var s=1.70158;return 1+(s+1)*Math.pow(k-1,3)+s*Math.pow(k-1,2)}
+var CY='#5DC9E2',OR='#F2A65A',TX='#E6EDF3',BG='#101820',LN='#2A3A4A';
+var SA='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',FT='600 40px '+SA;
+var B=[[['Checkpoint and replay turn one handler into','a workflow that can run for up to a year.'],'Checkpoint replay year.'],[['Keep the orchestration deterministic,','and put every side effect in a step.'],'deterministic, step.'],[['In Go: contexts belong to goroutines, unknown errors','go back unchanged, and durablelint checks both.'],'goroutines, unchanged, durablelint']];
+function draw(t){
+var fade=P(t,0,.4),i,l,w;
+g.clearRect(0,0,BW,BH);g.fillStyle=BG;g.fillRect(0,0,BW,BH);
+g.textBaseline='middle';g.textAlign='left';
+for(i=0;3>i;i++){var s=.5+i*3,Y=96+i*184,na=P(t,s,s+.4),idx=0,hot=' '+B[i][1]+' ';
+g.globalAlpha=fade*na;g.font='700 120px '+SA;g.fillStyle=OR;g.fillText(''+(i+1),56,Y+(1-bk(na))*60);g.globalAlpha=1;
+if(i>0){g.globalAlpha=fade*na;g.fillStyle=LN;g.fillRect(190,Y-92,1418*P(t,s,s+.7),2);g.globalAlpha=1}
+g.font=FT;var sp=g.measureText(' ').width;
+for(l=0;2>l;l++){var words=B[i][0][l].split(' '),x=190;for(w=0;words.length>w;w++){var a=P(t,s+.25+idx*.07,s+.6+idx*.07),wd=words[w];
+if(a>0){g.globalAlpha=fade*a;g.fillStyle=hot.indexOf(' '+wd+' ')>=0?CY:TX;g.fillText(wd,x,Y-27+l*54+(1-eo(a))*26);g.globalAlpha=1}
+x+=g.measureText(wd).width+sp;idx++}}}
+}
+var T0=-1,LT=0;
+function fr(n){if(0>T0)T0=n;if(n-LT>900)T0=n;LT=n;draw(Math.min((n-T0)/1000,END));requestAnimationFrame(fr)}
+if(window.IntersectionObserver){new IntersectionObserver(function(e){if(e[0].isIntersecting)T0=-1}).observe(c)}
+function go(){fit();if(!isNaN(F))draw(F)}
+go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
+})();
+</script>
+</x-embed>
+<div style="position:absolute;left:128px;top:872px;width:1664px;display:flex;justify-content:space-between">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#006E8A"><a href="https://docs.aws.amazon.com/durable-execution/">docs.aws.amazon.com/durable-execution</a></p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#006E8A"><a href="https://github.com/aws/aws-durable-execution-sdk-go">github.com/aws/aws-durable-execution-sdk-go</a></p>
+</div>
+<aside>19:00 to 20:00. No clicks. Style: kinetic typography. The three takeaways arrive one after another, three seconds apart, each word rising into place with the key words in blue. Read each one as it lands. One: checkpoint and replay turn one handler into a workflow that can run for up to a year. Two: keep the orchestration deterministic, and put every side effect in a step. Three: in Go, contexts belong to goroutines, unknown errors go back unchanged, and durablelint checks both. Then point at the two links and take questions. Likely questions: How is this different from Step Functions? (The workflow is code in your function rather than a separate state machine definition.) What does it cost? (Compute, requests, durable operations, and stored checkpoint state; nothing for compute while suspended.) Can I change code while executions are in flight? (Replay needs the same operations in the same order, so treat in-flight executions with care when you change the sequence of operations.) Which languages? (TypeScript, Python, Java, Go, C#, and Rust in preview.)</aside>
+</section>

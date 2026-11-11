@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+# Rebuilds the grouped slides of the deck from base/slides plus the canvas scenes in scenes/.
+# cover.html, why.html and wrap.html are not generated: edit them directly in deck/project/slides.
+import re, json, os
+S = os.path.dirname(os.path.abspath(__file__))
+BK = S + '/base/slides'            # slides as they were before the sidebar/split pass; gen.py reuses their content
+SL = S + '/deck/project/slides'    # generated output; publish with root = S + '/deck'
+SC = S + '/scenes'                 # canvas scene bodies (plain JS, no '<' or '&')
+
+def rd(p): return open(p, encoding='utf-8').read()
+def wr(name, text): open(f'{SL}/{name}.html', 'w', encoding='utf-8').write(text)
+def bk(name): return rd(f'{BK}/{name}.html')
+def emb(name): return re.search(r'<x-embed[^>]*>(.*?)</x-embed>', bk(name), re.S).group(1)
+def old_aside(name): return re.search(r'<aside>(.*?)</aside>', bk(name), re.S).group(1)
+def code_p(name): return re.search(r"(<p style=\"font-family:'JetBrains Mono'[^>]*white-space:nowrap\">.*?</p>)", bk(name), re.S).group(1)
+
+PRE = '''<style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
+<canvas id="c"></canvas>
+<script>
+(function(){
+var c=document.getElementById('c'),g=c.getContext('2d'),BW=@BW@,BH=@BH@,END=@END@,CLEAR=@CLEAR@;
+var F=parseFloat((location.hash.match(/t=([\\d.]+)/)||[])[1]);
+function fit(){var d=Math.min(window.devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;g.setTransform(c.width/BW,0,0,c.height/BH,0,0)}
+function cl(v){return Math.max(0,Math.min(1,v))}
+function P(t,a,b){return cl((t-a)/(b-a))}
+function mix(a,b,k){return a+(b-a)*k}
+function eo(k){return 1-Math.pow(1-k,3)}
+function eio(k){return k>.5?1-Math.pow(-2*k+2,3)/2:4*k*k*k}
+function bk(k){var s=1.70158;return 1+(s+1)*Math.pow(k-1,3)+s*Math.pow(k-1,2)}
+function win(t,a,b){return Math.min(P(t,a,a+.35),1-P(t,b-.35,b))}
+var CY='#5DC9E2',OR='#F2A65A',PK='#FF7A9A',TX='#E6EDF3',MU='#8B9BAA',BG='#101820',LN='#2A3A4A';
+var SA='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',MO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+function txt(s,X,Y,f,col,al,alg){if(!(al>0))return;g.globalAlpha=al;g.font=f;g.fillStyle=col;g.textAlign=alg||'left';g.textBaseline='middle';g.fillText(s,X,Y);g.globalAlpha=1}
+function rr(X,Y,w,h,r){g.beginPath();g.moveTo(X+r,Y);g.arcTo(X+w,Y,X+w,Y+h,r);g.arcTo(X+w,Y+h,X,Y+h,r);g.arcTo(X,Y+h,X,Y,r);g.arcTo(X,Y,X+w,Y,r);g.closePath()}
+function disc(X,Y,r,col,al){if(!(al>0))return;if(!(r>0))return;g.globalAlpha=al;g.beginPath();g.arc(X,Y,r,0,6.2832);g.fillStyle=col;g.fill();g.globalAlpha=1}
+function ring(X,Y,r,col,lw,al){if(!(al>0))return;if(!(r>0))return;g.globalAlpha=al;g.beginPath();g.arc(X,Y,r,0,6.2832);g.strokeStyle=col;g.lineWidth=lw;g.stroke();g.globalAlpha=1}
+function seg(x1,y1,x2,y2,col,lw,al,dash){if(!(al>0))return;g.globalAlpha=al;if(dash)g.setLineDash([8,10]);g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.strokeStyle=col;g.lineWidth=lw;g.lineCap='round';g.stroke();g.setLineDash([]);g.globalAlpha=1}
+'''
+POST = '''function frame(t){g.clearRect(0,0,BW,BH);if(!CLEAR){g.fillStyle=BG;g.fillRect(0,0,BW,BH)}draw(t);if(!CLEAR){var f=1-P(t,0,.4);if(f>0){g.globalAlpha=f;g.fillStyle=BG;g.fillRect(0,0,BW,BH);g.globalAlpha=1}}}
+var T0=-1,LT=0;
+function fr(n){if(0>T0)T0=n;if(n-LT>900)T0=n;LT=n;frame(Math.min((n-T0)/1000,END));requestAnimationFrame(fr)}
+if(window.IntersectionObserver){new IntersectionObserver(function(e){if(e[0].isIntersecting)T0=-1}).observe(c)}
+function go(){fit();if(!isNaN(F))frame(F)}
+go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
+})();
+</script>
+'''
+def scene(name, bw, bh, end, clear=0, defs=''):
+    body = rd(f'{SC}/{name}.js')
+    assert '<' not in body and '&' not in body, name
+    pre = PRE.replace('@BW@', str(bw)).replace('@BH@', str(bh)).replace('@END@', str(end)).replace('@CLEAR@', str(clear))
+    if clear: pre = pre.replace(';border-radius:16px', '')
+    return pre + defs + body + POST
+
+LIGHT = "background:#F6F4EE;color:#101820;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 112px;display:flex;flex-direction:column;gap:40px"
+def head(eyebrow, title):
+    return ('<div style="display:flex;flex-direction:column;gap:12px">\n'
+            f'<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">{eyebrow}</p>\n'
+            f'<h2 style="font-size:64px;font-weight:600;line-height:1.1">{title}</h2>\n</div>\n')
+def mk(sid, eyebrow, title, body, aside):
+    return f'<section id="{sid}" style="{LIGHT}">\n' + head(eyebrow, title) + body + f'\n<aside>{aside}</aside>\n</section>\n'
+def xe(x, y, w, h, inner, eid=None):
+    i = f' id="{eid}"' if eid else ''
+    return f'<x-embed{i} style="position:absolute;left:{x}px;top:{y}px;width:{w}px;height:{h}px">{inner}</x-embed>\n'
+def rows(items, x, y, w):
+    out = f'<div style="position:absolute;left:{x}px;top:{y}px;width:{w}px;display:flex;flex-direction:column">\n'
+    for i, (h, p) in enumerate(items):
+        bt = '2px solid #101820' if i == 0 else '1px solid #DDD8CC'
+        out += (f'<div style="display:flex;flex-direction:column;gap:8px;padding:20px 0px;border-top:{bt}">'
+                f'<h3 style="font-size:30px;font-weight:600;line-height:1.2">{h}</h3>'
+                f'<p style="font-size:24px;line-height:1.4;color:#3D4852">{p}</p></div>\n')
+    return out + '</div>\n'
+def cols(items, x, y, w):
+    out = f'<div style="position:absolute;left:{x}px;top:{y}px;width:{w}px;display:flex;gap:48px;align-items:start">\n'
+    for h, p in items:
+        out += (f'<div style="flex:1;display:flex;flex-direction:column;gap:8px">'
+                f'<h3 style="font-size:30px;font-weight:600;line-height:1.2">{h}</h3>'
+                f'<p style="font-size:24px;line-height:1.4;color:#3D4852">{p}</p></div>\n')
+    return out + '</div>\n'
+def stmt(text, x, y, w):
+    return f'<p style="position:absolute;left:{x}px;top:{y}px;width:{w}px;font-size:40px;line-height:1.3">{text}</p>\n'
+def panel(p, w):
+    return f'<div style="width:{w}px;background:#101820;border-radius:16px;padding:36px 40px;display:flex;flex-direction:column">\n{p}\n</div>\n'
+
+# ---------------------------------------------------------------- sidebar
+GROUPS = {
+    'how': ['Code', 'Play', 'CheckCircle'],
+    'sdk': ['Settings', 'Warning', 'Database', 'Activity'],
+    'go': ['Code', 'Lightning', 'Warning', 'Wrench', 'Lightbulb'],
+    'demo': ['Play', 'Database'],
+}
+import math
+ACX, ACY, AR, AOFF, ASTEP = 1269, 657, 658, 60, 12
+GLYPH = [
+    '<path d="M-10 -13 L-22 0 L-10 13 M10 -13 L22 0 L10 13 M4 -17 L-4 17"/>',
+    '<path d="M5 -21 L-11 3 L1 3 L-5 21 L11 -3 L-1 -3 Z" fill="@C@" stroke="none"/>',
+    '<path d="M0 -19 L21 17 L-21 17 Z"/><path d="M0 -6 L0 5"/><circle cx="0" cy="11" r="1.5" fill="@C@" stroke="none"/>',
+    '<path d="M-17 17 L5 -5"/><path d="M18.9 -15.31 A9 9 0 1 1 3.37 -15.77"/>',
+    '<path d="M-7.65 5.51 A13 13 0 1 1 7.91 5.32"/><path d="M-6 13 L6 13 M-4 20 L4 20"/>',
+]
+# Arc states: [centre x, centre y, radius, icon radius, icon step, angle of first icon, glow angle, glow distance beyond the arc, glow radius]
+BIGR = [960, 1100, 1157, 1217, 5.2, -44, -37, 160, 520]
+def BIGL(k): return [960, 1100, 1157, 1217, 5.2, round(41 - 5.2 * k, 2), 37, 160, 520]
+def SMALL(k): return [430, 430, 430, 485, 9.5, round(45 - 9.5 * k, 2), 45, 110, 330]
+def arc_svg(s, foc, oc='#006E8A'):
+    # A still picture of the arc. It must match what the canvas in gonav.js draws for the same state.
+    pt = lambda phi, r: (s[0] - r * math.sin(math.radians(phi)), s[1] - r * math.cos(math.radians(phi)))
+    gx, gy = pt(s[6], s[2] + s[7])
+    out = ('<svg id="nav-arc-s" aria-label="Topic navigation" style="position:absolute;left:0px;top:0px" width="1920" height="540" viewBox="0 0 1920 540"><defs>'
+           f'<radialGradient id="ag" gradientUnits="userSpaceOnUse" cx="{gx:.1f}" cy="{gy:.1f}" r="{s[8]}">'
+           '<stop offset="0" stop-color="rgb(0,173,216)" stop-opacity="0.8"/><stop offset="0.32" stop-color="rgb(255,122,154)" stop-opacity="0.45"/>'
+           '<stop offset="0.62" stop-color="rgb(242,166,90)" stop-opacity="0.3"/><stop offset="1" stop-color="rgb(242,166,90)" stop-opacity="0"/></radialGradient>')
+    icons = ''
+    for j in range(5):
+        x, y = pt(s[5] + j * s[4], s[3])
+        if x < -60 or x > 1980 or y < -60 or y > 600: continue
+        f = 1 if j == foc else 0
+        if f:
+            out += (f'<radialGradient id="af" gradientUnits="userSpaceOnUse" cx="{x:.1f}" cy="{y:.1f}" r="62"><stop offset="0" stop-color="rgb(0,173,216)" stop-opacity="0.9"/>'
+                    '<stop offset="0.6" stop-color="rgb(0,173,216)" stop-opacity="0.85"/><stop offset="1" stop-color="rgb(0,173,216)" stop-opacity="0"/></radialGradient>')
+            icons += f'<circle cx="{x:.1f}" cy="{y:.1f}" r="62" fill="url(#af)"/>'
+        col = '#F6F4EE' if f else oc
+        icons += (f'<g transform="translate({x:.1f} {y:.1f}) scale({1.3 if f else 0.8})" opacity="{1 if f else 0.6}" fill="none" stroke="{col}" '
+                  f'stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">{GLYPH[j].replace("@C@", col)}</g>')
+    out += (f'</defs><path fill-rule="evenodd" fill="url(#ag)" d="M0 0 H1920 V540 H0 Z M{s[0] - s[2]} {s[1]} a{s[2]} {s[2]} 0 1 0 {2 * s[2]} 0 a{s[2]} {s[2]} 0 1 0 {-2 * s[2]} 0 Z"/>')
+    return out + icons + '</svg>\n'
+def arc_nav(idx, prev, teal=False, intro=False):
+    # Go section. Every slide carries a still SVG of the arc; topic cards also carry a canvas that paints over
+    # it and animates: start state -> big arc on this topic -> ring and line -> shrink to the compact arc.
+    if teal:                       # section opener: big, resting in the top-right, nothing focused
+        return arc_svg(BIGR, -1, '#F6F4EE'), ''
+    if prev is None:               # content slide: compact arc at rest
+        return arc_svg(SMALL(idx), idx), ''
+    s0, f0 = (BIGR, -1) if prev < 0 else (SMALL(prev), prev)
+    defs = f'var S0={s0},S1={BIGL(idx)},S2={SMALL(idx)},F0={f0},F1={idx};\n'
+    return arc_svg(s0, f0) + xe(0, 0, 1920, 540, scene('gonav', 1920, 540, 100000, 1, defs), 'nav-arc'), ''
+def nav(group, idx, dark=False, intro=False, teal=False):
+    rgb, chip, on, off =('24,35,46', '#5DC9E2', '#101820', '#F6F4EE') if dark else ('236,232,221', '#006E8A', '#F6F4EE', '#006E8A')
+    fadeo = [1, 0.3, 0.13, 0.06, 0.03]
+    out = (f'<div id="nav-strip" style="position:absolute;left:1816px;top:0px;width:104px;height:1080px;'
+           f'background:linear-gradient(to bottom, rgba({rgb},0) 0%, rgba({rgb},1) 34%, rgba({rgb},1) 66%, rgba({rgb},0) 100%)"></div>\n')
+    if intro:
+        out += xe(1380, 440, 540, 200, scene('navline', 540, 200, 100000, 1), 'nav-line')
+    for j, name in enumerate(GROUPS[group]):
+        top = 504 + (j - idx) * 112
+        if top < -60 or top > 1070: continue
+        col = chip if j == idx else off
+        op = fadeo[min(abs(j - idx), 4)]
+        out += f'<x-icon id="nav-{group}-{j}" name="{name}" style="position:absolute;left:1832px;top:{top}px;width:72px;height:72px;color:{col};opacity:{op}"></x-icon>\n'
+    return out
+NAVRE = re.compile(r'<(div|x-icon|x-embed|svg) id="nav-[^"]*"[^>]*>.*?</\1>\n?', re.S)
+def finish(text, group, idx, trans, dark=False, intro=False, teal=False, prev=None):
+    text = NAVRE.sub('', text)
+    if group == 'go':
+        back, front = arc_nav(idx, prev, teal, intro)
+        text = text.replace('<aside>', front + '<aside>', 1)
+        if '</x-embed>\n<p ' in text and teal:      # section opener: keep the wedge above its full-bleed backdrop
+            text = text.replace('</x-embed>\n', '</x-embed>\n' + back, 1)
+        else:
+            text = re.sub(r'(<section id="[^"]+"[^>]*>\n)', lambda m: m.group(1) + back, text, count=1)
+    elif group: text = text.replace('<aside>', nav(group, idx, dark, intro, teal) + '<aside>', 1)
+    def fix(m):
+        tag = re.sub(r' data-transition="[^"]*"', '', m.group(0))
+        return tag.replace('<section id="%s"' % m.group(1), '<section id="%s" data-transition="%s"' % (m.group(1), trans), 1) if trans else tag
+    return re.sub(r'<section id="([^"]+)"[^>]*>', fix, text, count=1)
+
+def intro_go(sid, eyebrow, title, line, aside):
+    body = (f'<p style="position:absolute;left:560px;top:412px;width:1232px;font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">{eyebrow}</p>\n'
+            f'<h2 style="position:absolute;left:560px;top:470px;width:1232px;font-size:120px;font-weight:600;line-height:1.1;letter-spacing:-2px">{title}</h2>\n'
+            f'<p style="position:absolute;left:560px;top:624px;width:1232px;font-size:30px;line-height:1.4;color:#3D4852">{line}</p>\n')
+    return f'<section id="{sid}" style="{LIGHT}">\n{body}<aside>{aside}</aside>\n</section>\n'
+def intro(sid, eyebrow, title, line, aside):
+    body = (f'<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">{eyebrow}</p>\n'
+            f'<h2 style="position:absolute;left:128px;top:470px;width:1220px;text-align:right;font-size:120px;font-weight:600;line-height:1.1;letter-spacing:-2px">{title}</h2>\n'
+            f'<p style="position:absolute;left:128px;top:624px;width:1220px;text-align:right;font-size:30px;line-height:1.4;color:#3D4852">{line}</p>\n')
+    return f'<section id="{sid}" style="{LIGHT}">\n{body}<aside>{aside}</aside>\n</section>\n'
+
+# ---------------------------------------------------------------- slides
+NEW = {}
+NEW['sdk-ops'] = intro('sdk-ops', 'The SDK · 1 of 4', 'Operations', 'Eight building blocks, three of which suspend the function.', 'Topic card, two seconds. The sidebar on the right tracks the four SDK topics: operations, error handling, state, observability. Say: first, what you can actually call.')
+NEW['sdk-errors'] = intro('sdk-errors', 'The SDK · 2 of 4', 'Error handling', 'Retries, backoff, and what replay does with a failure.', 'Topic card, two seconds. Say: second, what happens when something fails.')
+NEW['sdk-state'] = intro('sdk-state', 'The SDK · 3 of 4', 'State', 'What goes into a checkpoint, and how big it can be.', 'Topic card, two seconds. Say: third, where your data lives between invocations.')
+NEW['sdk-obs'] = intro('sdk-obs', 'The SDK · 4 of 4', 'Observability', 'Seeing one execution across many invocations.', 'Topic card, two seconds. Say: last, how you see what an execution did.')
+NEW['go-i-shape'] = intro_go('go-i-shape', 'Go · 1 of 5', 'API shape', 'Operations are generic functions, not methods.', 'Topic card, two seconds. The sidebar now tracks the five Go topics.')
+NEW['go-i-conc'] = intro_go('go-i-conc', 'Go · 2 of 5', 'Concurrency', 'Why a durable context belongs to one goroutine.', 'Topic card, two seconds. Say: this is the most Go-specific part of the talk.')
+NEW['go-i-errors'] = intro_go('go-i-errors', 'Go · 3 of 5', 'Errors', 'Errors are values, and one of them is a signal.', 'Topic card, two seconds.')
+NEW['go-i-tools'] = intro_go('go-i-tools', 'Go · 4 of 5', 'Tooling', 'A linter that knows the rules, and a local test runner.', 'Topic card, two seconds.')
+NEW['go-i-diff'] = intro_go('go-i-diff', 'Go · 5 of 5', 'Surprises', 'Five things that differ from the other SDKs.', 'Topic card, two seconds.')
+
+NEW['errors'] = mk('errors', 'The SDK · Error handling', 'Where an error happens decides what happens',
+    xe(128, 264, 1664, 560, scene('instep', 1664, 560, 10.5)) +
+    stmt('Wrap anything error-prone in a step. Code outside a step gets no retries.', 128, 856, 1664),
+    'No clicks; the panel plays once, about ten seconds. Top lane, inside a step: the attempt fails, the runner goes back to the start of the step, fails again, and succeeds on the third attempt; the handler continues. Each attempt is checkpointed and the invocation ends between attempts, so the backoff uses no compute. Bottom lane, outside a step: the same error between operations fails the whole execution at once, with no retry. When retries run out, the final error is checkpointed and handed to the handler, which can catch it and carry on.')
+NEW['errors-2'] = mk('errors-2', 'The SDK · Error handling', 'Retries back off without using compute',
+    xe(128, 264, 1218, 688, emb('errors')) +
+    rows([('The default', 'durable.ExponentialBackoff(): six attempts, 5 s doubling to a 60 s cap, full jitter.'),
+          ('Other presets', 'durable.NoRetry(), durable.MustLinearBackoff(...), or your own function.'),
+          ('On replay', 'The same error comes back at the same point. The body does not run again.')], 1394, 264, 398),
+    old_aside('errors'))
+NEW['errors-3'] = mk('errors-3', 'The SDK · Error handling', 'Step semantics: at least once, or at most once',
+    xe(128, 264, 1664, 560, scene('semantics', 1664, 560, 11.5)) +
+    stmt('At least once is the default. Choose at most once for side effects you cannot repeat, such as a payment.', 128, 856, 1664),
+    'No clicks; the panel plays once, about eleven seconds. Both lanes show the same accident: Lambda is interrupted after the step body ran but before its result was checkpointed. Top lane, AtLeastOncePerRetry, the default: on replay the body runs again, so the charge happens twice. That is why steps should be idempotent. Bottom lane, AtMostOncePerRetry: on replay the body is not run again; the interrupted attempt counts as failed, and when no retries remain the step returns a StepError with ErrorType StepInterruptedError. You do not know whether the charge went through, so check the payment system. Set it with durable.WithSemantics(durable.AtMostOncePerRetry). The charge counter is illustrative.')
+NEW['state'] = mk('state', 'The SDK · State', 'State is what you serialize',
+    xe(128, 264, 1664, 520, scene('roundtrip', 1664, 520, 8.5)) +
+    cols([('JSON by default', 'Results are stored with encoding/json. Replay decodes the stored result and skips the code that produced it.'),
+          ('Struct rules apply', 'Tags and unexported fields behave exactly as they do in encoding/json.')], 128, 820, 1664),
+    'No clicks; the panel plays once, about eight seconds. A Go value is marshaled into the checkpoint: the two exported fields make it into the JSON, the unexported one does not. On replay the value is unmarshaled again and the unexported field comes back empty. There is no state store API: state is the set of operation results in the checkpoint log, so what you return from a step is what you can rely on later. The default is durable.JSONSerdes, encoding/json with HTML escaping disabled. The SDK applies this round trip on the first run too, so a value that does not survive JSON shows up immediately, not as a surprise during replay. The Order type is an illustration.')
+NEW['state-2'] = mk('state-2', 'The SDK · State', 'Limits, and what to do about them',
+    xe(128, 264, 600, 688, emb('state')) +
+    rows([('256 KB per step result', '262,144 bytes per checkpoint. The local test runner enforces the same limit.'),
+          ('1 MB per Invoke input', '1,048,576 bytes.'),
+          ('Large payloads', 'NewFileSystemSerdes writes the value to EFS or S3 Files and checkpoints a reference. Never point it at /tmp.'),
+          ('Custom Serdes', 'Marshal and Unmarshal, set with WithSerdes or WithStepSerdes, for encryption or compression.')], 776, 264, 1016),
+    old_aside('state'))
+NEW['observability'] = mk('observability', 'The SDK · Observability', 'One execution, many invocations',
+    xe(128, 264, 752, 688, emb('observability')) +
+    stmt('Lambda writes one log stream per invocation, so the history of a single execution is scattered across streams.', 944, 420, 848),
+    'No clicks; the panel plays once, about seven seconds: four sheets drop in, one log stream per invocation, then they collapse into a single execution record. The figures in that record are illustrative. The next slide is how you put the history back together.')
+NEW['observability-2'] = mk('observability-2', 'The SDK · Observability', 'Four ways to see an execution',
+    xe(128, 264, 760, 600, scene('logonce', 760, 600, 8)) +
+    rows([('Logging', 'A replay-aware slog logger. Records carry requestId and executionArn; step records add operationId and attempt.'),
+          ('Plugins', 'Hooks on invocations, operations, attempts and child contexts. Experimental in Go.'),
+          ('OpenTelemetry', 'Spans show how long each piece of work took and how the pieces relate.'),
+          ('Durable Execution Telemetry', 'One JSON record per execution, exported to S3, DynamoDB or CloudWatch Logs.')], 936, 264, 856),
+    'No clicks; the panel plays once, about seven seconds, and illustrates the first row. Invocation 1 logs two lines. Invocation 2 replays the handler from the top: the same two log calls run again but are suppressed, and only the new line is written, so the output has three lines, not five. ctx.Logger() and the step context logger return a standard *slog.Logger. Bring your own slog.Handler with durable.WithLogHandler, or emit replayed records tagged replay=true with durable.WithReplayLogMode(durable.ReplayLogModeEmit). Plugins are the extension point the other tools build on. Telemetry answers whole-execution questions (which step failed, how many attempts, how long) as ordinary queries; there is also an MCP server for read-only agent access. Go has no OTLP exporter.')
+NEW['go-race'] = mk('go-race', 'Go · Concurrency', 'Why a context has one owner',
+    xe(128, 264, 1173, 688, emb('go-concurrency')) +
+    rows([('Scheduling is not deterministic', 'Two goroutines would claim operation IDs in whatever order they happen to run.'),
+          ('So the SDK refuses', 'An operation called from another goroutine fails with ErrWrongGoroutine before it claims an ID.')], 1349, 264, 443),
+    'No clicks; the race plays once, about twelve seconds. It shows what would happen if the SDK allowed plain goroutines on one context. First run: A reaches the claim line first and takes operation 1, B takes operation 2, both results are recorded. Replay: B wins the race, lands in operation 1 and is handed the result recorded for the charge; the slots shake and turn pink. Determinism says operations must be claimed in the same order every time; goroutine scheduling is not deterministic, so each context is owned by the goroutine that created it. A plain go statement or an errgroup.Go callback that touches the parent context fails with durable.ErrWrongGoroutine, and nothing is recorded. The check is on in every default build; the durablenocheck build tag compiles it out.')
+NEW['go-concurrency'] = mk('go-concurrency', 'Go · Concurrency', 'durable.Go replaces the go keyword',
+    panel(code_p('go-concurrency'), 900) +
+    rows([('durable.Go returns a Future', 'It claims the child operation on the calling goroutine, then runs the body on a new one with a fresh child context.'),
+          ('Await with combinators', 'All, AllSettled, Any, Race, Join, Select. Each records its outcome as one operation.'),
+          ('Fan out with Map and Parallel', 'Every item or branch gets its own child context, tuned with WithMaxConcurrency and WithCompletion.')], 1076, 264, 716),
+    'The fix for the race on the previous slide. The claim happens synchronously on the caller, the work happens concurrently on a child context. Inside the body use child, never the outer ctx. Do not write a sequence of Result calls that returns on the first error: the other futures are left unawaited and their progress is not checkpointed when the invocation suspends. Use a combinator; replay then returns the same outcome. A future nothing awaits still records its start (an unawaited InvokeAsync still invokes), but the invocation does not wait for it. For fan-out over data, Map with WithMaxConcurrency is usually what you want; the default completion policy is fail-fast, and CompletionConfig changes that.')
+NEW['go-errors'] = mk('go-errors', 'Go · Errors', 'Errors and the suspension signal',
+    xe(128, 264, 716, 688, emb('go-errors')) +
+    stmt('A non-nil error from an operation is one of three things. Handle the ones you recognize, and return everything else unchanged.', 908, 400, 884),
+    'No clicks; the sorter plays once, about nine seconds. A *StepError lands in typed failure: match it with errors.As. A plain error lands in the second bin: an invalid argument or option, such as a Wait under one second, so fix the call. The third token is the suspension signal: it lands, then shoots straight back up, because the only correct thing to do with it is return it. In Go, suspension travels through the error return. That is why if err != nil { return zero, err } is not just style here: it is how the invocation ends cleanly at a Wait or a callback.')
+NEW['go-errors-2'] = mk('go-errors-2', 'Go · Errors', 'Match on ErrorType, not on your own type',
+    panel(code_p('go-errors'), 900) +
+    rows([('Rebuilt from the checkpoint', 'A typed failure carries the recorded ErrorType and Message, not your original error value.'),
+          ('errors.As finds the SDK type', '*durable.StepError, or *durable.OperationError for any operation.'),
+          ('Sentinels use errors.Is', 'ErrCallbackTimedOut, ErrWrongGoroutine, ErrWrongContext.')], 1076, 264, 716),
+    'The pattern in code. A typed failure is rebuilt from the checkpoint, identically on the first run and on replay, so errors.As against your own CardDeclinedError will not match; compare stepErr.ErrorType. ErrorType is "Error" for errors.New and fmt.Errorf, and the Go type name otherwise. The default branch returns err untouched, which is what lets the suspension signal through. When the handler itself returns an error, the execution settles FAILED.')
+NEW['go-tooling'] = mk('go-tooling', 'Go · Tooling', 'durablelint: catch it before you deploy',
+    xe(128, 264, 1664, 376, emb('go-tooling')) +
+    cols([('Five analyzers', 'The fifth, durablechildctx, flags a captured context used where a function has its own.'),
+          ('Runs where you lint', 'As durablelint ./..., as go vet -vettool, or as a golangci-lint v2 plugin.'),
+          ('Suppress one finding', 'A //durable:ignore comment on the line, or the line above it.')], 128, 692, 1664),
+    'No clicks; the scan plays once, about eight seconds. Line 2, time.Now() in orchestration code: durablenondeterminism. Line 3, a go statement around a durable operation: durablegoroutine. Line 6, writing to a captured variable inside a step: durableclosure. Line 7, an operation created inside a step body: durablenestedop. The findings illustrate what each rule is for; they are not captured output from a real run. durablelint lives in its own module, github.com/aws/aws-durable-execution-sdk-go/analysis, Go 1.25 or later.')
+NEW['go-test'] = mk('go-test', 'Go · Tooling', 'durabletest: a one-hour wait in a unit test',
+    '<div style="width:800px;display:flex;flex-direction:column;gap:32px">\n' + panel(code_p('go-tooling'), 800) +
+    '<ul style="font-size:24px;line-height:1.4;color:#3D4852">\n<li>RunUntilComplete invokes the handler as many times as the execution needs</li>\n<li>result.Operations lists every recorded operation</li>\n<li>SendCallbackSuccess resolves a callback the handler is blocked on</li>\n<li>NewCloudRunner runs the same assertions against a deployed function</li>\n</ul>\n</div>\n' +
+    xe(976, 264, 816, 418, scene('testrun', 820, 420, 6.5)),
+    'No clicks; the panel plays once, about five seconds. The local runner executes the handler in process: invocation 1 runs up to the one-hour Wait, the runner completes the timer itself instead of waiting, invocation 2 replays and finishes, and the test reads the result. No network and no AWS credentials. The runner checks each checkpoint against the service limits, for example a step result over 262,144 bytes. Because result.Operations lists every recorded operation, a test can assert that a step ran once across replays. The runner takes no testing handle, so the same calls work in a plain main with go run.')
+NEW['demo-data'] = mk('demo-data', 'Demo · Data', 'How PrimeDrive stores an upload',
+    xe(128, 264, 1664, 640, scene('dynamo', 1664, 640, 10.5)) +
+    '<p style="position:absolute;left:128px;top:920px;width:1664px;font-size:24px;line-height:1.4;color:#3D4852">One DynamoDB table. The user ID and file name here are examples.</p>\n',
+    'No clicks; the table plays once, about ten seconds. One DynamoDB table holds everything a user uploaded. The partition key is user#, then the Cognito subject. An upload writes one item whose sort key starts with #file#. Each label Rekognition detects adds one item whose sort key starts with #index#, then the label, then the object key. Then the important part for durable execution: the index step runs again, as it would on a retry, and writes the same keys, so the table still has four items. Keys built from the label and the object are what make that step safe to retry and replay. Last, search: GET /query?index=sea becomes a query for sort keys that begin with #index#sea. User 42, beach.jpg and the three labels are made up for the slide; the key layout is from the catalog construct in the CDK stack. Attributes other than the keys are left out because the handler that writes them is not in the repo yet.')
+
+# id -> (group, index, flags)
+ORDER = [('cover', None, 0, ''), ('why', None, 0, ''),
+    ('first', 'how', 0, ''), ('replay', 'how', 1, ''), ('replay-live', 'how', 1, ''), ('determinism', 'how', 2, ''),
+    ('sdk-ops', 'sdk', 0, 'i'), ('operations', 'sdk', 0, ''), ('waiting', 'sdk', 0, ''), ('waiting-2', 'sdk', 0, ''), ('waiting-3', 'sdk', 0, ''),
+    ('sdk-errors', 'sdk', 1, 'i'), ('errors', 'sdk', 1, ''), ('errors-2', 'sdk', 1, ''), ('errors-3', 'sdk', 1, ''),
+    ('sdk-state', 'sdk', 2, 'i'), ('state', 'sdk', 2, ''), ('state-2', 'sdk', 2, ''),
+    ('sdk-obs', 'sdk', 3, 'i'), ('observability', 'sdk', 3, ''), ('observability-2', 'sdk', 3, ''),
+    ('go', 'go', -1, 't'),
+    ('go-i-shape', 'go', 0, 'i'), ('go-shape', 'go', 0, ''),
+    ('go-i-conc', 'go', 1, 'i'), ('go-race', 'go', 1, ''), ('go-concurrency', 'go', 1, ''),
+    ('go-i-errors', 'go', 2, 'i'), ('go-errors', 'go', 2, ''), ('go-errors-2', 'go', 2, ''),
+    ('go-i-tools', 'go', 3, 'i'), ('go-tooling', 'go', 3, ''), ('go-test', 'go', 3, ''),
+    ('go-i-diff', 'go', 4, 'i'), ('go-gotchas', 'go', 4, ''),
+    ('demo', 'demo', 0, 'd'), ('demo-data', 'demo', 1, ''), ('wrap', None, 0, '')]
+
+changed = []
+for n, (sid, group, idx, fl) in enumerate(ORDER):
+    if not group: continue
+    text = NEW[sid] if sid in NEW else bk(sid)
+    if group == 'go' and 'i' not in fl:
+        if sid != 'go':
+            text = text.replace('<div style="display:flex;flex-direction:column;gap:12px">', '<div style="display:flex;flex-direction:column;gap:12px;padding:0px 0px 0px 48px">', 1)
+    nxt = ORDER[n + 1] if n + 1 < len(ORDER) else None
+    if nxt and nxt[1] == group and group != 'go':
+        trans = 'magic'
+    else:
+        trans = 'fade'
+    prv = ORDER[n - 1] if n else None
+    pidx = None
+    if group == 'go' and prv and prv[1] == 'go' and prv[2] != idx: pidx = prv[2]
+    wr(sid, finish(text, group, idx, trans, dark=('d' in fl), intro=('i' in fl), teal=('t' in fl), prev=pidx))
+    changed.append(sid)
+
+idx_path = S + '/deck/project/deck.json'
+d = json.load(open(idx_path, encoding='utf-8'))
+d['order'] = [o[0] for o in ORDER]
+d['sections']['s3']['start'] = 'sdk-ops'
+json.dump(d, open(idx_path, 'w', encoding='utf-8'), indent=2, ensure_ascii=False)
+print(len(ORDER), 'slides in order;', len(changed), 'files written')
+print(json.dumps({f'project/slides/{c}.html': f'project/slides/{c}.html' for c in changed}))

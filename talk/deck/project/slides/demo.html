@@ -1,0 +1,60 @@
+<section id="demo" data-transition="magic" style="background:#101820;color:#F6F4EE;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#5DC9E2">Demo</p>
+<h2 style="font-size:64px;font-weight:600;line-height:1.1">PrimeDrive, the Go Durable way</h2>
+<p style="font-size:30px;line-height:1.4;color:#A9B7C4">Upload a photo and it is labelled, reviewed, thumbnailed and indexed. One durable function replaces the Step Functions state machine, its trigger function and the ASL definition.</p>
+</div>
+<div style="display:flex;gap:16px;align-items:center">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;border:2px dashed #5B6B7A;border-radius:16px;padding:20px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#A9B7C4">S3 event</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Upload</h3>
+<p style="font-size:24px;line-height:1.4;color:#A9B7C4">Starts an execution through the live alias</p>
+</div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5DC9E2"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#1A2633;border:2px solid #5DC9E2;border-radius:16px;padding:20px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#5DC9E2">Step</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Analyze</h3>
+<p style="font-size:24px;line-height:1.4;color:#A9B7C4">Rekognition labels and moderation</p>
+</div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5DC9E2"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#1A2633;border:2px solid #5DC9E2;border-radius:16px;padding:20px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#5DC9E2">WaitForCallback</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Review</h3>
+<p style="font-size:24px;line-height:1.4;color:#A9B7C4">A person decides, within 24 hours</p>
+</div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5DC9E2"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#1A2633;border:2px solid #5DC9E2;border-radius:16px;padding:20px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#5DC9E2">Invoke</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Thumbnail</h3>
+<p style="font-size:24px;line-height:1.4;color:#A9B7C4">A plain Lambda resizes the image</p>
+</div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5DC9E2"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#1A2633;border:2px solid #5DC9E2;border-radius:16px;padding:20px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#5DC9E2">Step</p>
+<h3 style="font-size:30px;font-weight:600;line-height:1.2">Index</h3>
+<p style="font-size:24px;line-height:1.4;color:#A9B7C4">One DynamoDB item per label</p>
+</div>
+</div>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:2px solid #5DC9E2;padding:20px 0px 0px">
+<p style="font-size:24px;font-weight:600;color:#5DC9E2">Watch for 1</p>
+<p style="font-size:30px;line-height:1.3">The upload starts an execution: no trigger function</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:2px solid #5DC9E2;padding:20px 0px 0px">
+<p style="font-size:24px;font-weight:600;color:#5DC9E2">Watch for 2</p>
+<p style="font-size:30px;line-height:1.3">At review it suspends: nothing runs, for up to a day</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:2px solid #5DC9E2;padding:20px 0px 0px">
+<p style="font-size:24px;font-weight:600;color:#5DC9E2">Watch for 3</p>
+<p style="font-size:30px;line-height:1.3">POST /reviews resumes the same execution</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:2px solid #5DC9E2;padding:20px 0px 0px">
+<p style="font-size:24px;font-weight:600;color:#5DC9E2">Watch for 4</p>
+<p style="font-size:30px;line-height:1.3">The photo is now found by what is in it</p>
+</div>
+</div>
+<div id="nav-strip" style="position:absolute;left:1816px;top:0px;width:104px;height:1080px;background:linear-gradient(to bottom, rgba(24,35,46,0) 0%, rgba(24,35,46,1) 34%, rgba(24,35,46,1) 66%, rgba(24,35,46,0) 100%)"></div>
+<x-icon id="nav-demo-0" name="Play" style="position:absolute;left:1832px;top:504px;width:72px;height:72px;color:#5DC9E2;opacity:1"></x-icon>
+<x-icon id="nav-demo-1" name="Database" style="position:absolute;left:1832px;top:616px;width:72px;height:72px;color:#F6F4EE;opacity:0.3"></x-icon>
+<aside>14:00 to 19:00, five minutes. The operation above each stage is taken from the CDK stack; rename to match the handler in cmd/pipeline once it is written. Script: 1) Infra, 45 seconds. Open infra/lib/constructs/upload-pipeline.ts. durableConfig is the only infrastructure difference between a durable function and a regular one: execution timeout is the 24 hour review timeout plus one hour, retention is 14 days, while the function timeout for a single invocation is one minute. A durable function is always invoked through a version or alias, here "live", so an execution that started on one version keeps replaying on that version even if you deploy while it waits. S3 invokes the alias directly for keys under users/. 2) Upload a photo in the frontend (presigned URL). 3) Open the execution: the analysis steps are checkpointed and it is waiting at the review callback. Point out that no invocation is running. 4) Approve with POST /reviews. The reviewer Lambda calls SendDurableExecutionCallbackSuccess (it is the only function allowed to). The same execution resumes: replay skips the analysis, then durable.Invoke calls the thumbnailer and the index step writes one item per label. 5) Search with GET /query?index=&lt;label&gt; and show the photo. 6) If time allows, say what happens on reject or after 24 hours without a decision: the upload is deleted. Mention that label items are keyed by label and object, so the index step is safe to retry and replay. Keep a finished execution open in another tab in case the live one misbehaves.</aside>
+</section>

@@ -1,0 +1,77 @@
+<section id="replay-live" data-transition="push" style="background:#F6F4EE;color:#101820;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 112px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">How it works</p>
+<h2 style="font-size:64px;font-weight:600;line-height:1.1">Checkpoint and replay, in motion</h2>
+</div>
+<x-embed style="position:absolute;left:128px;top:264px;width:1664px;height:688px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
+<canvas id="c"></canvas>
+<script>
+(function(){
+var c=document.getElementById('c'),g=c.getContext('2d'),BW=1664,BH=688,LEN=18;
+var F=parseFloat((location.hash.match(/t=([\d.]+)/)||[])[1]);
+function fit(){var d=Math.min(window.devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;g.setTransform(c.width/BW,0,0,c.height/BH,0,0)}
+function cl(v){return Math.max(0,Math.min(1,v))}
+function P(t,a,b){return cl((t-a)/(b-a))}
+function mix(a,b,k){return a+(b-a)*k}
+function eo(k){return 1-Math.pow(1-k,3)}
+function eio(k){return k>.5?1-Math.pow(-2*k+2,3)/2:4*k*k*k}
+function bk(k){var s=1.70158;return 1+(s+1)*Math.pow(k-1,3)+s*Math.pow(k-1,2)}
+function win(t,a,b){return Math.min(P(t,a,a+.35),1-P(t,b-.35,b))}
+var CY='#5DC9E2',OR='#F2A65A',TX='#E6EDF3',MU='#8B9BAA',BG='#101820',LN='#2A3A4A';
+var SA='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',MO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+function txt(s,X,Y,f,col,al,alg){if(!(al>0))return;g.globalAlpha=al;g.font=f;g.fillStyle=col;g.textAlign=alg||'left';g.textBaseline='middle';g.fillText(s,X,Y);g.globalAlpha=1}
+function disc(X,Y,r,col,al){if(!(al>0))return;if(!(r>0))return;g.globalAlpha=al;g.beginPath();g.arc(X,Y,r,0,6.2832);g.fillStyle=col;g.fill();g.globalAlpha=1}
+function glow(X,Y,r,col,al){if(!(al>0))return;if(!(r>0))return;var q=g.createRadialGradient(X,Y,0,X,Y,r);q.addColorStop(0,col);q.addColorStop(1,'rgba(16,24,32,0)');g.globalAlpha=al;g.fillStyle=q;g.beginPath();g.arc(X,Y,r,0,6.2832);g.fill();g.globalAlpha=1}
+function arc(X,Y,r,a,b,col,lw,al){if(!(al>0))return;if(!(r>0))return;g.globalAlpha=al;g.beginPath();g.arc(X,Y,r,a,b);g.strokeStyle=col;g.lineWidth=lw;g.lineCap='round';g.stroke();g.globalAlpha=1}
+function line(x1,y1,x2,y2,col,lw,al){if(!(al>0))return;g.globalAlpha=al;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.strokeStyle=col;g.lineWidth=lw;g.lineCap='round';g.stroke();g.globalAlpha=1}
+function rr(X,Y,w,h,r){g.beginPath();g.moveTo(X+r,Y);g.arcTo(X+w,Y,X+w,Y+h,r);g.arcTo(X+w,Y+h,X,Y+h,r);g.arcTo(X,Y+h,X,Y,r);g.arcTo(X,Y,X+w,Y,r);g.closePath()}
+var NX=[190,470,750,1030],NY=346,SX=70,NAME=['step-1','wait-10s','log.Info','return'];
+var RUN=[[2.2,3.2],[4.6,5.2],[11.9,12.7],[13.5,14.1]],REP=[9.9,10.6];
+var SL=[['step-1',0,3.2,4],['wait-10s',1,5,5.7],['execution',3,14.1,14.8]];
+var CAP=[[0,2.2,'The service invokes the handler.'],[2.2,3.6,'step-1 runs. Its result goes to the checkpoint log.'],[3.6,5.4,'wait-10s: the timer is checkpointed.'],[5.4,9.2,'The invocation ends. Nothing is running.'],[9.2,11,'Invocation 2 starts from the top. Stored results come back.'],[11,13.5,'New code runs for the first time.'],[13.5,18.5,'The handler returns. The execution succeeds.']];
+var TTL=[[0,5.4,'Invocation 1',CY],[5.4,9.2,'Suspended',MU],[9.2,11,'Invocation 2 · replay',OR],[11,14.1,'Invocation 2',CY],[14.1,18.5,'Execution succeeded',CY]];
+function pos(t){if(9.2>t)return mix(mix(SX,NX[0],eio(P(t,1,2.2))),NX[1],eio(P(t,3.6,4.6)));return mix(mix(mix(SX,NX[1],eio(P(t,9.4,10.6))),NX[2],eio(P(t,11,11.9))),NX[3],eio(P(t,12.7,13.5)))}
+function draw(t){
+var i,j,fade=Math.min(P(t,0,.5),1-P(t,17.4,18));
+g.clearRect(0,0,BW,BH);g.fillStyle=BG;g.fillRect(0,0,BW,BH);
+g.fillStyle='rgba(93,201,226,.08)';for(i=0;37>i;i++){for(j=0;15>j;j++){g.fillRect(((i*48+t*8)%1776)-48,j*48+12,3,3)}}
+var sus=P(t,5.4,6)-P(t,9,9.4),dim=1-.65*sus,in2=t>=9.2;
+var rx=pos(t),px=pos(t-.07),ra,rs=1,rc=CY;
+if(in2){ra=P(t,9.2,9.5);if(11>t)rc=OR}else{ra=P(t,.8,1.1)*(1-P(t,5.4,5.9));rs=1-P(t,5.4,5.9)}
+line(SX,NY,mix(SX,1110,eo(P(t,0,1))),NY,LN,4,fade*dim);
+if(ra>0){if(in2){line(SX,NY,Math.min(rx,NX[1]),NY,OR,4,fade*ra);if(rx>NX[1])line(NX[1],NY,rx,NY,CY,4,fade*ra)}else{line(SX,NY,rx,NY,CY,4,fade*ra)}}
+for(i=0;4>i;i++){var X=NX[i],run=RUN[i],pop=bk(P(t,.3+i*.15,.8+i*.15)),col=CY,dt=run[1],tag=t>=run[0]?'runs':'',al=fade*dim;
+if(2>i){if(in2){dt=REP[i];col=OR;tag=t>=dt?'replayed':''}}
+var done=t>=dt,running=t>=run[0]?(run[1]>t?1:0):0;
+disc(X,NY,38*pop,BG,al);arc(X,NY,38*pop,0,6.2832,done?col:LN,4,al);
+if(done){disc(X,NY,27*bk(P(t,dt,dt+.35)),col,al);g.globalAlpha=al*P(t,dt+.1,dt+.3);g.beginPath();g.moveTo(X-11,NY+1);g.lineTo(X-4,NY+9);g.lineTo(X+12,NY-9);g.strokeStyle=BG;g.lineWidth=5;g.lineCap='round';g.stroke();g.globalAlpha=1}
+if(running){arc(X,NY,54,t*7,t*7+2.4,CY,6,fade);glow(X,NY,140,CY,.3*fade)}
+txt(NAME[i],X,NY+92,'500 26px '+MO,TX,al*P(t,.5+i*.15,1+i*.15),'center');
+txt(tag,X,NY-84,'600 24px '+SA,col,al,'center')}
+if(sus>0){var rem=1-P(t,6,9);arc(NX[1],NY,64,-1.5708,-1.5708+6.2832*rem,OR,6,sus*fade);glow(NX[1],NY,120,OR,.22*sus*fade);txt('resumes in '+Math.max(1,Math.ceil(rem*10))+' s',NX[1],NY-140,'600 28px '+SA,OR,sus*fade,'center')}
+line(1196,84,1196,604,LN,2,fade);txt('CHECKPOINT LOG',1230,120,'600 24px '+SA,MU,fade);
+for(i=0;3>i;i++){var s=SL[i],sy=160+i*96,k=P(t,s[2],s[3]),sa=P(t,s[3]-.1,s[3]+.25)*fade,hot=0;
+if(2>i){hot=P(t,REP[i]-.3,REP[i])*(1-P(t,REP[i]+.1,REP[i]+.8))}
+if(k>0){if(1>k){var e=eio(k),fx=mix(NX[s[1]],1264,e),fy=mix(NY,sy+38,e)-Math.sin(e*3.1416)*120;glow(fx,fy,46,OR,.6*fade);disc(fx,fy,11,OR,fade)}}
+if(sa>0){g.globalAlpha=sa;rr(1230,sy,394,76,14);g.fillStyle='#16222E';g.fill();g.strokeStyle=hot>.05?OR:LN;g.lineWidth=hot>.05?3:2;g.stroke();g.globalAlpha=1;
+disc(1264,sy+38,11*bk(P(t,s[3]-.1,s[3]+.3)),OR,sa);txt(s[0],1290,sy+38,'500 26px '+MO,TX,sa);
+txt(i===1?(in2?'SUCCEEDED':'STARTED'):'SUCCEEDED',1606,sy+38,'600 24px '+SA,i===1?(in2?OR:CY):OR,sa,'right')}
+if(hot>0){line(1230,sy+38,NX[i]+36,NY-22,OR,3,hot*fade);glow(NX[i],NY,90,OR,.5*hot*fade)}}
+if(ra>0){var sp=Math.min(160,Math.abs(rx-px)*34);if(sp>4){var q=g.createLinearGradient(rx-sp,0,rx,0);q.addColorStop(0,'rgba(16,24,32,0)');q.addColorStop(1,rc);g.globalAlpha=fade*ra;g.beginPath();g.moveTo(rx-sp,NY);g.lineTo(rx,NY);g.strokeStyle=q;g.lineWidth=10;g.lineCap='round';g.stroke();g.globalAlpha=1}
+glow(rx,NY,110*rs,rc,.6*ra*fade);disc(rx,NY,15*rs,'#FFFFFF',ra*fade)}
+var b=P(t,14.1,15.1);if(b>0){if(1>b){for(i=0;14>i;i++){disc(NX[3]+Math.cos(i*.449)*eo(b)*120,NY+Math.sin(i*.449)*eo(b)*120,6*(1-b),CY,fade)}}}
+var use=(1-sus)*(1-P(t,14.3,14.9))*P(t,.6,1.1);
+txt('compute',836,84,'600 24px '+SA,MU,fade);g.globalAlpha=fade;rr(950,73,200,22,11);g.fillStyle=LN;g.fill();if(use>.02){rr(950,73,Math.max(22,200*use),22,11);g.fillStyle=CY;g.fill()}g.globalAlpha=1;
+for(i=0;TTL.length>i;i++){var T=TTL[i],a=win(t,T[0],T[1]);txt(T[2],60-(1-eo(P(t,T[0],T[0]+.4)))*30,84,'600 44px '+SA,T[3],a*fade)}
+for(i=0;CAP.length>i;i++){var C=CAP[i],ca=win(t,C[0],C[1]);txt(C[2],60,616+(1-eo(P(t,C[0],C[0]+.4)))*14,'500 30px '+SA,TX,ca*fade)}
+}
+var T0=-1,LT=0,END=16.6;
+function fr(n){if(0>T0)T0=n;if(n-LT>900)T0=n;LT=n;draw(Math.min((n-T0)/1000,END));requestAnimationFrame(fr)}
+if(window.IntersectionObserver){new IntersectionObserver(function(e){if(e[0].isIntersecting)T0=-1}).observe(c)}
+function go(){fit();if(!isNaN(F))draw(F)}
+go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
+})();
+</script>
+</x-embed>
+<aside>2:30 to 3:45. No clicks: this runs the function from the previous slide as a motion graphic that loops every 18 seconds. A glowing runner is the invocation. First run: it reaches step-1, the step runs, and an orange checkpoint flies into the log on the right; the same at wait-10s. Then the runner disappears, the track dims, the compute bar empties and a ring counts the wait down. Invocation 2 starts from the left in orange: as it passes each completed step a beam comes back from the log and the step is marked replayed without running. Past the wait it turns blue again, runs the new code and the execution succeeds. Narrate over one full loop. A click-through diagram of the same story is kept as a hidden slide just before this one, as a fallback for a PDF export. It plays in the web deck; a PDF or PowerPoint export shows a still frame.</aside>
+</section>

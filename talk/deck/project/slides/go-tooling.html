@@ -1,0 +1,52 @@
+<section id="go-tooling" data-transition="fade" style="background:#F6F4EE;color:#101820;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 112px;display:flex;flex-direction:column;gap:40px">
+<svg id="nav-arc-s" aria-label="Topic navigation" style="position:absolute;left:0px;top:0px" width="1920" height="540" viewBox="0 0 1920 540"><defs><radialGradient id="ag" gradientUnits="userSpaceOnUse" cx="48.2" cy="48.2" r="330"><stop offset="0" stop-color="rgb(0,173,216)" stop-opacity="0.8"/><stop offset="0.32" stop-color="rgb(255,122,154)" stop-opacity="0.45"/><stop offset="0.62" stop-color="rgb(242,166,90)" stop-opacity="0.3"/><stop offset="1" stop-color="rgb(242,166,90)" stop-opacity="0"/></radialGradient><radialGradient id="af" gradientUnits="userSpaceOnUse" cx="87.1" cy="87.1" r="62"><stop offset="0" stop-color="rgb(0,173,216)" stop-opacity="0.9"/><stop offset="0.6" stop-color="rgb(0,173,216)" stop-opacity="0.85"/><stop offset="1" stop-color="rgb(0,173,216)" stop-opacity="0"/></radialGradient></defs><path fill-rule="evenodd" fill="url(#ag)" d="M0 0 H1920 V540 H0 Z M0 430 a430 430 0 1 0 860 0 a430 430 0 1 0 -860 0 Z"/><g transform="translate(292.3 -35.0) scale(0.8)" opacity="0.6" fill="none" stroke="#006E8A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M-10 -13 L-22 0 L-10 13 M10 -13 L22 0 L10 13 M4 -17 L-4 17"/></g><g transform="translate(217.4 -5.9) scale(0.8)" opacity="0.6" fill="none" stroke="#006E8A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 -21 L-11 3 L1 3 L-5 21 L11 -3 L-1 -3 Z" fill="#006E8A" stroke="none"/></g><g transform="translate(148.4 35.2) scale(0.8)" opacity="0.6" fill="none" stroke="#006E8A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M0 -19 L21 17 L-21 17 Z"/><path d="M0 -6 L0 5"/><circle cx="0" cy="11" r="1.5" fill="#006E8A" stroke="none"/></g><circle cx="87.1" cy="87.1" r="62" fill="url(#af)"/><g transform="translate(87.1 87.1) scale(1.3)" opacity="1" fill="none" stroke="#F6F4EE" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M-17 17 L5 -5"/><path d="M18.9 -15.31 A9 9 0 1 1 3.37 -15.77"/></g><g transform="translate(35.2 148.4) scale(0.8)" opacity="0.6" fill="none" stroke="#006E8A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M-7.65 5.51 A13 13 0 1 1 7.91 5.32"/><path d="M-6 13 L6 13 M-4 20 L4 20"/></g></svg>
+<div style="display:flex;flex-direction:column;gap:12px;padding:0px 0px 0px 48px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">Go · Tooling</p>
+<h2 style="font-size:64px;font-weight:600;line-height:1.1">durablelint: catch it before you deploy</h2>
+</div>
+<x-embed style="position:absolute;left:128px;top:264px;width:1664px;height:376px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
+<canvas id="c"></canvas>
+<script>
+(function(){
+var c=document.getElementById('c'),g=c.getContext('2d'),BW=1664,BH=376,END=8.5;
+var F=parseFloat((location.hash.match(/t=([\d.]+)/)||[])[1]);
+function fit(){var d=Math.min(window.devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;g.setTransform(c.width/BW,0,0,c.height/BH,0,0)}
+function cl(v){return Math.max(0,Math.min(1,v))}
+function P(t,a,b){return cl((t-a)/(b-a))}
+function eo(k){return 1-Math.pow(1-k,3)}
+var CY='#5DC9E2',PK='#FF7A9A',TX='#E6EDF3',MU='#8B9BAA',BG='#101820',LN='#2A3A4A';
+var SA='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',MO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+var L=[[0,'func handler(ctx durable.Context, n int) (int, error) {'],[1,'log.Println(time.Now())'],[1,'go durable.Step(ctx, "audit", audit)'],[1,'total := 0'],[1,'return durable.Step(ctx, "sum", func(sc durable.StepContext) (int, error) {'],[2,'total += n'],[2,'return durable.Step(ctx, "inner", work)'],[1,'})']];
+var BAD=[1,2,5,6],RULE=['durablenondeterminism','durablegoroutine','durableclosure','durablenestedop'],CMD='durablelint ./...';
+function txt(s,X,Y,f,col,al,alg){if(!(al>0))return;g.globalAlpha=al;g.font=f;g.fillStyle=col;g.textAlign=alg||'left';g.textBaseline='middle';g.fillText(s,X,Y);g.globalAlpha=1}
+function tb(i){return 1.2+(i+.5)/8*5.4}
+function draw(t){
+var fade=P(t,0,.4),s=P(t,1.2,6.6)*8,i,j;
+g.clearRect(0,0,BW,BH);g.fillStyle=BG;g.fillRect(0,0,BW,BH);
+g.font='500 24px '+MO;var cw=g.measureText('m').width;
+var ba=(t>=1.2?1:0)*(1-P(t,6.6,7))*fade;
+if(ba>0){var by=24+s*38;g.globalAlpha=ba;g.fillStyle='rgba(93,201,226,.16)';g.fillRect(24,by-19,1150,38);g.fillStyle=CY;g.fillRect(24,by+17,1150,3);g.globalAlpha=1}
+for(i=0;8>i;i++){var y=62+i*38,x=48+L[i][0]*4*cw,sc=s>i+.5?1:0;txt(L[i][1],x,y,'500 24px '+MO,sc?TX:MU,fade)}
+for(j=0;4>j;j++){i=BAD[j];var q=P(t,tb(i),tb(i)+.45),a=P(t,tb(i)+.2,tb(i)+.55);
+if(q>0){var x0=48+L[i][0]*4*cw,x1=x0+L[i][1].length*cw*q,yy=62+i*38+17,xx;g.globalAlpha=fade;g.beginPath();g.moveTo(x0,yy);for(xx=x0;x1>xx;xx+=4){g.lineTo(xx,yy+Math.sin((xx-x0)*.55)*3)}g.strokeStyle=PK;g.lineWidth=3;g.stroke();g.globalAlpha=1}
+txt('line '+(i+1),1226+(1-eo(a))*30,118+j*52,'500 24px '+MO,MU,a*fade);txt(RULE[j],1340+(1-eo(a))*30,118+j*52,'600 24px '+SA,PK,a*fade)}
+g.globalAlpha=fade;g.beginPath();g.moveTo(1196,36);g.lineTo(1196,340);g.strokeStyle=LN;g.lineWidth=2;g.stroke();g.globalAlpha=1;
+txt(CMD.slice(0,Math.floor(P(t,.2,1)*CMD.length)),1226,62,'600 26px '+MO,CY,fade);
+txt('4 findings before deploy',1226,336,'600 26px '+SA,TX,fade*P(t,6.9,7.3));
+}
+var T0=-1,LT=0;
+function fr(n){if(0>T0)T0=n;if(n-LT>900)T0=n;LT=n;draw(Math.min((n-T0)/1000,END));requestAnimationFrame(fr)}
+if(window.IntersectionObserver){new IntersectionObserver(function(e){if(e[0].isIntersecting)T0=-1}).observe(c)}
+function go(){fit();if(!isNaN(F))draw(F)}
+go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
+})();
+</script>
+</x-embed>
+<div style="position:absolute;left:128px;top:692px;width:1664px;display:flex;gap:48px;align-items:start">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:30px;font-weight:600;line-height:1.2">Five analyzers</h3><p style="font-size:24px;line-height:1.4;color:#3D4852">The fifth, durablechildctx, flags a captured context used where a function has its own.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:30px;font-weight:600;line-height:1.2">Runs where you lint</h3><p style="font-size:24px;line-height:1.4;color:#3D4852">As durablelint ./..., as go vet -vettool, or as a golangci-lint v2 plugin.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:30px;font-weight:600;line-height:1.2">Suppress one finding</h3><p style="font-size:24px;line-height:1.4;color:#3D4852">A //durable:ignore comment on the line, or the line above it.</p></div>
+</div>
+
+<aside>No clicks; the scan plays once, about eight seconds. Line 2, time.Now() in orchestration code: durablenondeterminism. Line 3, a go statement around a durable operation: durablegoroutine. Line 6, writing to a captured variable inside a step: durableclosure. Line 7, an operation created inside a step body: durablenestedop. The findings illustrate what each rule is for; they are not captured output from a real run. durablelint lives in its own module, github.com/aws/aws-durable-execution-sdk-go/analysis, Go 1.25 or later.</aside>
+</section>

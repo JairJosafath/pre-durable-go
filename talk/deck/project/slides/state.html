@@ -1,0 +1,66 @@
+<section id="state" data-transition="magic" style="background:#F6F4EE;color:#101820;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 112px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">The SDK · State</p>
+<h2 style="font-size:64px;font-weight:600;line-height:1.1">State is what you serialize</h2>
+</div>
+<x-embed style="position:absolute;left:128px;top:264px;width:1664px;height:520px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
+<canvas id="c"></canvas>
+<script>
+(function(){
+var c=document.getElementById('c'),g=c.getContext('2d'),BW=1664,BH=520,END=8.5,CLEAR=0;
+var F=parseFloat((location.hash.match(/t=([\d.]+)/)||[])[1]);
+function fit(){var d=Math.min(window.devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;g.setTransform(c.width/BW,0,0,c.height/BH,0,0)}
+function cl(v){return Math.max(0,Math.min(1,v))}
+function P(t,a,b){return cl((t-a)/(b-a))}
+function mix(a,b,k){return a+(b-a)*k}
+function eo(k){return 1-Math.pow(1-k,3)}
+function eio(k){return k>.5?1-Math.pow(-2*k+2,3)/2:4*k*k*k}
+function bk(k){var s=1.70158;return 1+(s+1)*Math.pow(k-1,3)+s*Math.pow(k-1,2)}
+function win(t,a,b){return Math.min(P(t,a,a+.35),1-P(t,b-.35,b))}
+var CY='#5DC9E2',OR='#F2A65A',PK='#FF7A9A',TX='#E6EDF3',MU='#8B9BAA',BG='#101820',LN='#2A3A4A';
+var SA='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',MO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+function txt(s,X,Y,f,col,al,alg){if(!(al>0))return;g.globalAlpha=al;g.font=f;g.fillStyle=col;g.textAlign=alg||'left';g.textBaseline='middle';g.fillText(s,X,Y);g.globalAlpha=1}
+function rr(X,Y,w,h,r){g.beginPath();g.moveTo(X+r,Y);g.arcTo(X+w,Y,X+w,Y+h,r);g.arcTo(X+w,Y+h,X,Y+h,r);g.arcTo(X,Y+h,X,Y,r);g.arcTo(X,Y,X+w,Y,r);g.closePath()}
+function disc(X,Y,r,col,al){if(!(al>0))return;if(!(r>0))return;g.globalAlpha=al;g.beginPath();g.arc(X,Y,r,0,6.2832);g.fillStyle=col;g.fill();g.globalAlpha=1}
+function ring(X,Y,r,col,lw,al){if(!(al>0))return;if(!(r>0))return;g.globalAlpha=al;g.beginPath();g.arc(X,Y,r,0,6.2832);g.strokeStyle=col;g.lineWidth=lw;g.stroke();g.globalAlpha=1}
+function seg(x1,y1,x2,y2,col,lw,al,dash){if(!(al>0))return;g.globalAlpha=al;if(dash)g.setLineDash([8,10]);g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.strokeStyle=col;g.lineWidth=lw;g.lineCap='round';g.stroke();g.setLineDash([]);g.globalAlpha=1}
+var C1=48,C2=606,C3=1204,W1=400,W2=440,W3=400,C0=96,CH=240,JS='{"ID":"A-17","Total":4200}';
+var V1=['Order{','  ID:     "A-17",','  Total:  4200,','  secret: "tok_9f",','}'],V2=['Order{','  ID:     "A-17",','  Total:  4200,','  secret: "",','}'];
+function card(X,CW,title,a){if(!(a>0))return;g.globalAlpha=a;rr(X,C0,CW,CH,16);g.fillStyle='#16222E';g.fill();g.strokeStyle=LN;g.lineWidth=3;g.stroke();g.globalAlpha=1;txt(title,X,C0-30,'600 24px '+SA,MU,a)}
+function arrow(x1,x2,k,label){if(!(k>0))return;var y=C0+CH/2,xe=mix(x1,x2,eo(k));seg(x1,y,xe,y,CY,4,1);if(k>=1){seg(x2-14,y-11,x2,y,CY,4,1);seg(x2-14,y+11,x2,y,CY,4,1)}txt(label,(x1+x2)/2,y-28,'500 22px '+MO,CY,k,'center')}
+function draw(t){
+var i,a1=P(t,.3,.7),a3=P(t,4.6,5);
+card(C1,W1,'GO VALUE',a1);
+for(i=0;5>i;i++){txt(V1[i],C1+28,C0+44+i*38,'500 24px '+MO,i===3?(t>=2.9?PK:TX):TX,a1)}
+arrow(C1+W1+14,C2-14,P(t,1.3,1.7),'Marshal');
+card(C2,W2,'CHECKPOINT',P(t,1.5,1.9));
+txt(JS.slice(0,Math.floor(P(t,1.9,3)*JS.length)),C2+28,C0+CH/2,'500 24px '+MO,TX,1);
+txt('unexported: not serialized',C1,C0+CH+36,'600 24px '+SA,PK,P(t,2.9,3.3));
+arrow(C2+W2+14,C3-14,P(t,4.2,4.6),'Unmarshal');
+card(C3,W3,'ON REPLAY',a3);
+for(i=0;5>i;i++){txt(V2[i],C3+28,C0+44+i*38,'500 24px '+MO,i===3?PK:TX,P(t,4.9+i*.18,5.2+i*.18))}
+txt('lost',C3+W3-28,C0+44+3*38,'600 24px '+SA,PK,P(t,6,6.4),'right');
+txt('A step result is marshaled into its checkpoint.',48,468,'500 30px '+SA,TX,win(t,.5,4.2));
+txt('The first run takes the same round trip, so it sees what replay will see.',48,468,'500 30px '+SA,TX,P(t,4.2,4.6));
+}
+function frame(t){g.clearRect(0,0,BW,BH);if(!CLEAR){g.fillStyle=BG;g.fillRect(0,0,BW,BH)}draw(t);if(!CLEAR){var f=1-P(t,0,.4);if(f>0){g.globalAlpha=f;g.fillStyle=BG;g.fillRect(0,0,BW,BH);g.globalAlpha=1}}}
+var T0=-1,LT=0;
+function fr(n){if(0>T0)T0=n;if(n-LT>900)T0=n;LT=n;frame(Math.min((n-T0)/1000,END));requestAnimationFrame(fr)}
+if(window.IntersectionObserver){new IntersectionObserver(function(e){if(e[0].isIntersecting)T0=-1}).observe(c)}
+function go(){fit();if(!isNaN(F))frame(F)}
+go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
+})();
+</script>
+</x-embed>
+<div style="position:absolute;left:128px;top:820px;width:1664px;display:flex;gap:48px;align-items:start">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:30px;font-weight:600;line-height:1.2">JSON by default</h3><p style="font-size:24px;line-height:1.4;color:#3D4852">Results are stored with encoding/json. Replay decodes the stored result and skips the code that produced it.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:30px;font-weight:600;line-height:1.2">Struct rules apply</h3><p style="font-size:24px;line-height:1.4;color:#3D4852">Tags and unexported fields behave exactly as they do in encoding/json.</p></div>
+</div>
+
+<div id="nav-strip" style="position:absolute;left:1816px;top:0px;width:104px;height:1080px;background:linear-gradient(to bottom, rgba(236,232,221,0) 0%, rgba(236,232,221,1) 34%, rgba(236,232,221,1) 66%, rgba(236,232,221,0) 100%)"></div>
+<x-icon id="nav-sdk-0" name="Settings" style="position:absolute;left:1832px;top:280px;width:72px;height:72px;color:#006E8A;opacity:0.13"></x-icon>
+<x-icon id="nav-sdk-1" name="Warning" style="position:absolute;left:1832px;top:392px;width:72px;height:72px;color:#006E8A;opacity:0.3"></x-icon>
+<x-icon id="nav-sdk-2" name="Database" style="position:absolute;left:1832px;top:504px;width:72px;height:72px;color:#006E8A;opacity:1"></x-icon>
+<x-icon id="nav-sdk-3" name="Activity" style="position:absolute;left:1832px;top:616px;width:72px;height:72px;color:#006E8A;opacity:0.3"></x-icon>
+<aside>No clicks; the panel plays once, about eight seconds. A Go value is marshaled into the checkpoint: the two exported fields make it into the JSON, the unexported one does not. On replay the value is unmarshaled again and the unexported field comes back empty. There is no state store API: state is the set of operation results in the checkpoint log, so what you return from a step is what you can rely on later. The default is durable.JSONSerdes, encoding/json with HTML escaping disabled. The SDK applies this round trip on the first run too, so a value that does not survive JSON shows up immediately, not as a surprise during replay. The Order type is an illustration.</aside>
+</section>
