@@ -2,9 +2,10 @@
 const baseUrl = (process.env.NEXT_PUBLIC_ENDPOINT || "").replace(/\/+$/, "");
 
 /** Calls the PrimeDrive API as the signed-in user. */
-export async function api(path, { token, method = "GET", body } = {}) {
+export async function api(path, { token, method = "GET", body, accept } = {}) {
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
+  if (accept) headers.Accept = accept;
   if (body) headers["Content-Type"] = "application/json";
 
   return fetch(`${baseUrl}${path}`, {

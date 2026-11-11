@@ -123,7 +123,10 @@ export default function useThumber(token, search) {
       .split("|")
       .filter(Boolean)
       .forEach(async (title) => {
-        const response = await api(`/object/${encodeURIComponent(title)}`, { token });
+        // API Gateway passes an image through as bytes only when the request
+        // accepts one of its binary media types (image/*). A browser's default,
+        // */*, does not count, and the image would arrive as mangled text.
+        const response = await api(`/object/${encodeURIComponent(title)}`, { token, accept: "image/*" });
         if (!response.ok) return;
 
         const url = URL.createObjectURL(await response.blob());
