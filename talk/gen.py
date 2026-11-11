@@ -156,7 +156,11 @@ def arc_nav(idx, prev, teal=False, intro=False):
     # Go section. Every slide carries a still SVG of the arc; topic cards also carry a canvas that paints over
     # it and animates: start state -> big arc on this topic -> ring and line -> shrink to the compact arc.
     if teal:                       # section opener: big, resting in the top-right, the Go logo instead of topic icons
-        return arc_svg(BIGR, -1, show_icons=False, extra=go_logo_g(*GOLOGO)), ''
+        # glow under the animated backdrop (its stripes pass over the glow), logo above it
+        w0, h0, _ = logo_inner('go'); h = GOLOGO[2]; w = round(h * w0 / h0)
+        logo = (f'<svg id="nav-arc-logo" aria-label="Go" style="position:absolute;left:{GOLOGO[0] - w // 2}px;top:{GOLOGO[1] - h // 2}px" '
+                f'width="{w}" height="{h}" viewBox="0 0 {w} {h}">{go_logo_g(w / 2, h / 2, h, GOLOGO[3])}</svg>\n')
+        return arc_svg(BIGR, -1, show_icons=False), logo
     if prev is None:               # content slide: compact arc at rest
         return arc_svg(SMALL(idx), idx), ''
     s0, f0 = (BIGR, -1) if prev < 0 else (SMALL(prev), prev)
@@ -182,10 +186,11 @@ def finish(text, group, idx, trans, dark=False, intro=False, teal=False, prev=No
     text = NAVRE.sub('', text)
     if group == 'go':
         back, front = arc_nav(idx, prev, teal, intro)
-        text = text.replace('<aside>', front + '<aside>', 1)
-        if '</x-embed>\n<p ' in text and teal:      # section opener: keep the wedge above its full-bleed backdrop
-            text = text.replace('</x-embed>\n', '</x-embed>\n' + back, 1)
+        if teal:      # section opener: glow, then the transparent animated backdrop, then the logo, all under the text
+            assert '</x-embed>\n<p ' in text
+            text = text.replace('<x-embed', back + '<x-embed', 1).replace('</x-embed>\n', '</x-embed>\n' + front, 1)
         else:
+            text = text.replace('<aside>', front + '<aside>', 1)
             text = re.sub(r'(<section id="[^"]+"[^>]*>\n)', lambda m: m.group(1) + back, text, count=1)
     elif group: text = text.replace('<aside>', nav(group, idx, dark, intro, teal) + '<aside>', 1)
     def fix(m):
