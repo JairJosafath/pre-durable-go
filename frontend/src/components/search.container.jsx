@@ -1,7 +1,7 @@
 import useThumber from "@/hooks/useThumber";
 
 export default function SearchContainer({ token, search, setSearch }) {
-    const { thumbs, photo, setPhoto } = useThumber(token, search);
+    const { thumbs, photo, setPhoto, hasMore, loadMore } = useThumber(token, search);
 
     return(
         <div className="m-6 bg-neutral-900 p-4">
@@ -13,7 +13,7 @@ export default function SearchContainer({ token, search, setSearch }) {
 
         </div>
         <main className="grid grid-cols-4 gap-1 auto-rows-max p-2">
-        {thumbs?.slice(0, 10).map(({ title, url }, index) => (
+        {thumbs?.map(({ title, url }, index) => (
           <div key={index}>
             <label className="truncate w-2">{title}</label>
             <img
@@ -25,6 +25,11 @@ export default function SearchContainer({ token, search, setSearch }) {
           </div>
         ))}
       </main>
+      {hasMore && (
+        <button className="my-2 rounded bg-neutral-800 px-4 py-2 active:scale-95" onClick={loadMore}>
+          Load more
+        </button>
+      )}
       {photo?.url && (
         <div className="w-screen h-screen fixed bg-black/90 top-0 left-0 flex flex-col items-center justify-center">
           <svg

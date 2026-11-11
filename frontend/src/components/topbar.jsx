@@ -1,4 +1,8 @@
+import useLabels from "@/hooks/useLabels";
+
 export default function Topbar({ searchInput, input, setFile, auth, setSearch}) {
+    // Suggestions come from the user's own labels: one small query per pause in typing.
+    const { labels, suggest } = useLabels(auth?.idToken);
 
     return (
         <header className="flex justify-between px-8 py-3">
@@ -10,7 +14,17 @@ export default function Topbar({ searchInput, input, setFile, auth, setSearch}) 
               placeholder="Search"
               className="w-96 rounded bg-neutral-800 p-2"
               ref={searchInput}
+              list="label-suggestions"
+              onChange={(e) => suggest(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setSearch(searchInput.current.value);
+              }}
             />
+            <datalist id="label-suggestions">
+              {labels.map((label) => (
+                <option key={label} value={label} />
+              ))}
+            </datalist>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
