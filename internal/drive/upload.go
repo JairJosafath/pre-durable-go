@@ -14,6 +14,9 @@ import (
 // ErrNotAnUpload reports an object key outside the users/<owner>/<name> layout.
 var ErrNotAnUpload = errors.New("key is not of the form users/<owner>/<name>")
 
+// ErrFileNotFound reports that a user has no upload with the given key.
+var ErrFileNotFound = errors.New("file not found")
+
 // ErrUnsupportedImage reports an image that can never be analysed, however
 // often the analysis is retried.
 var ErrUnsupportedImage = errors.New("unsupported image")
@@ -49,6 +52,11 @@ func ParseUpload(bucket, key string) (Upload, error) {
 		Object: Object{Bucket: bucket, Key: key},
 		Owner:  segments[ownerSegment],
 	}, nil
+}
+
+// UserKey returns the object key of a file in a user's drive.
+func UserKey(owner, name string) string {
+	return userPrefix + "/" + owner + "/" + name
 }
 
 // IsImage reports whether the upload has a file type the pipeline can analyse.
