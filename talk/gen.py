@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Rebuilds the grouped slides of the deck from base/slides plus the canvas scenes in scenes/.
-# cover.html, why.html and wrap.html are not generated: edit them directly in deck/project/slides.
+# cover.html, why.html, demo-video.html and wrap.html are not generated: edit them directly in deck/project/slides.
 import re, json, os
 S = os.path.dirname(os.path.abspath(__file__))
 BK = S + '/base/slides'            # slides as they were before the sidebar/split pass; gen.py reuses their content
@@ -401,6 +401,7 @@ ORDER = [('cover', None, 0, ''), ('why', None, 0, ''),
     ('go-i-errors', 'go', 2, 'i'), ('go-errors', 'go', 2, ''), ('go-errors-2', 'go', 2, ''),
     ('go-i-tools', 'go', 3, 'i'), ('go-tooling', 'go', 3, ''), ('go-test', 'go', 3, ''),
     ('go-i-diff', 'go', 4, 'i'), ('go-gotchas', 'go', 4, ''),
+    ('demo-video', None, 0, ''),      # hand-written placeholder: the recorded demo plays here
     ('demo', 'demo', 0, ''), ('demo-handler', 'demo', 1, ''), ('demo-parallel', 'demo', 1, ''), ('demo-review', 'demo', 1, ''),
     ('demo-data', 'demo', 2, ''), ('wrap', None, 0, '')]      # flag h would keep a slide in the deck but skip it when presenting
 
@@ -432,6 +433,7 @@ idx_path = S + '/deck/project/deck.json'
 d = json.load(open(idx_path, encoding='utf-8'))
 d['order'] = [o[0] for o in ORDER]
 d['sections']['s3']['start'] = 'sdk-ops'
+d['sections']['s5']['start'] = 'demo-video'
 json.dump(d, open(idx_path, 'w', encoding='utf-8'), indent=2, ensure_ascii=False)
 print(len(ORDER), 'slides in order;', len(changed), 'files written')
 print(json.dumps({f'project/slides/{c}.html': f'project/slides/{c}.html' for c in changed}))
