@@ -401,9 +401,10 @@ ORDER = [('cover', None, 0, ''), ('why', None, 0, ''),
     ('go-i-errors', 'go', 2, 'i'), ('go-errors', 'go', 2, ''), ('go-errors-2', 'go', 2, ''),
     ('go-i-tools', 'go', 3, 'i'), ('go-tooling', 'go', 3, ''), ('go-test', 'go', 3, ''),
     ('go-i-diff', 'go', 4, 'i'), ('go-gotchas', 'go', 4, ''),
-    ('demo-video', None, 0, ''),      # hand-written placeholder: the recorded demo plays here
     ('demo', 'demo', 0, ''), ('demo-handler', 'demo', 1, ''), ('demo-parallel', 'demo', 1, ''), ('demo-review', 'demo', 1, ''),
-    ('demo-data', 'demo', 2, ''), ('wrap', None, 0, '')]      # flag h would keep a slide in the deck but skip it when presenting
+    ('demo-data', 'demo', 2, ''),
+    ('demo-video', None, 0, ''),      # hand-written placeholder: the recorded demo plays here
+    ('wrap', None, 0, '')]      # flag h would keep a slide in the deck but skip it when presenting
 
 changed = []
 for n, (sid, group, idx, fl) in enumerate(ORDER):
@@ -433,7 +434,7 @@ idx_path = S + '/deck/project/deck.json'
 d = json.load(open(idx_path, encoding='utf-8'))
 d['order'] = [o[0] for o in ORDER]
 d['sections']['s3']['start'] = 'sdk-ops'
-d['sections']['s5']['start'] = 'demo-video'
+d['sections']['s5']['start'] = 'demo'
 json.dump(d, open(idx_path, 'w', encoding='utf-8'), indent=2, ensure_ascii=False)
 print(len(ORDER), 'slides in order;', len(changed), 'files written')
 print(json.dumps({f'project/slides/{c}.html': f'project/slides/{c}.html' for c in changed}))

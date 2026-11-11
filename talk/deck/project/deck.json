@@ -43,12 +43,12 @@
     "go-test",
     "go-i-diff",
     "go-gotchas",
-    "demo-video",
     "demo",
     "demo-handler",
     "demo-parallel",
     "demo-review",
     "demo-data",
+    "demo-video",
     "wrap"
   ],
   "sections": {
@@ -70,7 +70,7 @@
     },
     "s5": {
       "description": "The primedrive demo and the takeaways.",
-      "start": "demo-video"
+      "start": "demo"
     }
   },
   "faces": {
