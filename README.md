@@ -57,6 +57,23 @@ From the [Go SDK guide](https://docs.aws.amazon.com/durable-execution/sdk-refere
 | Testing with durabletest | [harness_test.go](internal/pipeline/harness_test.go), [pipeline_test.go](internal/pipeline/pipeline_test.go) |
 | Cloud runner | [cloud_test.go](internal/pipeline/cloud_test.go) |
 
+## Data model
+
+One DynamoDB table, single-table design. Everything a user owns is in their
+partition (`pk = user#<sub>`), and each question the app asks is one query on
+a sort-key prefix:
+
+| Question | `sk` begins with | Written by |
+| --- | --- | --- |
+| My files | `#file#` | every status change of the pipeline |
+| Files with label "cat" | `#index#cat#` | `index-labels`, one item per label and file |
+| Which labels do I have | `#label#` | `index-labels`, one item per label, with categories and aliases |
+
+The table is shaped for reads. An upload is indexed once, in the background;
+searches happen all the time. Queries are paged (24 items), so the cost of a
+read stays flat as a drive grows. Every item is keyed by what it describes,
+so the pipeline's writes are plain puts that are safe to retry and replay.
+
 ## Test it offline
 
 No AWS account, credentials, network or containers:
