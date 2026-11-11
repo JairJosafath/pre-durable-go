@@ -99,14 +99,17 @@ func (c *Catalog) SaveFile(_ context.Context, file drive.File) error {
 	return nil
 }
 
-// IndexLabel makes the upload findable by the label and remembers the label.
-// Indexing the same pair twice leaves a single entry, like the real catalog.
+// IndexLabel makes the upload findable by the label's name and aliases, and
+// remembers the label. Indexing twice leaves single entries, like the real
+// catalog.
 func (c *Catalog) IndexLabel(_ context.Context, upload drive.Upload, label drive.Label) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if !slices.Contains(c.index[label.Name], upload.Key) {
-		c.index[label.Name] = append(c.index[label.Name], upload.Key)
+	for _, term := range label.SearchTerms() {
+		if !slices.Contains(c.index[term], upload.Key) {
+			c.index[term] = append(c.index[term], upload.Key)
+		}
 	}
 
 	c.labels[label.Name] = label
@@ -134,12 +137,12 @@ func (c *Catalog) File(key string) (drive.File, bool) {
 	return file, ok
 }
 
-// Keys returns the object keys indexed under a label.
-func (c *Catalog) Keys(label string) []string {
+// Keys returns the object keys found by a search term.
+func (c *Catalog) Keys(term string) []string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	return slices.Clone(c.index[label])
+	return slices.Clone(c.index[term])
 }
 
 // Objects is an object store backed by a map.

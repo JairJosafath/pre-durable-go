@@ -8,7 +8,7 @@ import { Construct } from 'constructs';
  * sort-key prefix:
  *
  *   pk = user#<sub>   sk = #file#<object key>            my files
- *   pk = user#<sub>   sk = #index#<label>#<object key>   files with a label
+ *   pk = user#<sub>   sk = #index#<term>#<object key>    files found by a label or alias
  *   pk = user#<sub>   sk = #label#<label>                the labels I have
  *
  * The table is shaped for reads: the pipeline writes one small item per

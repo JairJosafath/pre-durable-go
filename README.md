@@ -66,7 +66,7 @@ a sort-key prefix:
 | Question | `sk` begins with | Written by |
 | --- | --- | --- |
 | My files | `#file#` | every status change of the pipeline |
-| Files with label "cat" | `#index#cat#` | `index-labels`, one item per label and file |
+| Files found by "cat" | `#index#cat#` | `index-labels`, one item per file for the label's name and for each alias |
 | Which labels do I have | `#label#` | `index-labels`, one item per label, with categories and aliases |
 
 The table is shaped for reads. An upload is indexed once, in the background;

@@ -18,7 +18,7 @@ import (
 // sort-key prefix:
 //
 //	pk = user#<owner>   sk = #file#<key>            my files
-//	pk = user#<owner>   sk = #index#<label>#<key>   files with a label
+//	pk = user#<owner>   sk = #index#<term>#<key>    files found by a label or alias
 //	pk = user#<owner>   sk = #label#<label>         the labels I have
 //
 // Writes happen once per upload, in the background; reads happen on every
@@ -51,7 +51,8 @@ type labelItem struct {
 	Aliases    []string `json:"aliases,omitempty"`
 }
 
-// indexItem makes one upload findable by one label.
+// indexItem makes one upload findable by one search term: a label's name or
+// one of its aliases. Label always holds the name.
 type indexItem struct {
 	PK         string  `json:"pk"`
 	SK         string  `json:"sk"`
@@ -66,19 +67,24 @@ func (c *Catalog) SaveFile(ctx context.Context, file drive.File) error {
 	return c.put(ctx, fileItem{File: file, PK: userKey(file.Owner), SK: fileKey(file.Key)})
 }
 
-// IndexLabel makes the upload findable by the label and records that the
-// user has this label. Both items are keyed by what they describe, so writing
-// them again leaves the table as it was: the call is safe to retry.
+// IndexLabel makes the upload findable by the label's name and by each of
+// its aliases, and records that the user has this label. A search for an
+// alias is then the same single query as a search for the name.
+//
+// Every item is keyed by what it describes, so writing it again leaves the
+// table as it was: the call is safe to retry.
 func (c *Catalog) IndexLabel(ctx context.Context, upload drive.Upload, label drive.Label) error {
-	entry := indexItem{
-		PK:         userKey(upload.Owner),
-		SK:         indexKey(label.Name, upload.Key),
-		Key:        upload.Key,
-		Label:      label.Name,
-		Confidence: label.Confidence,
-	}
-	if err := c.put(ctx, entry); err != nil {
-		return err
+	for _, term := range label.SearchTerms() {
+		entry := indexItem{
+			PK:         userKey(upload.Owner),
+			SK:         indexKey(term, upload.Key),
+			Key:        upload.Key,
+			Label:      label.Name,
+			Confidence: label.Confidence,
+		}
+		if err := c.put(ctx, entry); err != nil {
+			return err
+		}
 	}
 
 	return c.put(ctx, labelItem{
@@ -141,6 +147,6 @@ func fileKey(objectKey string) string { return "#file#" + objectKey }
 
 func labelKey(label string) string { return "#label#" + strings.ToLower(label) }
 
-func indexKey(label, objectKey string) string {
-	return "#index#" + strings.ToLower(label) + "#" + objectKey
+func indexKey(term, objectKey string) string {
+	return "#index#" + strings.ToLower(term) + "#" + objectKey
 }

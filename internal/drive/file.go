@@ -22,6 +22,12 @@ type Label struct {
 	Aliases []string `json:"aliases,omitempty"`
 }
 
+// SearchTerms returns every word an upload with this label can be found by:
+// the label's name and its aliases.
+func (l Label) SearchTerms() []string {
+	return append([]string{l.Name}, l.Aliases...)
+}
+
 // File is the catalog record of an upload.
 type File struct {
 	Upload
