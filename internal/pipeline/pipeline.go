@@ -81,11 +81,17 @@ func (p *Pipeline) Handle(ctx durable.Context, event events.S3Event) (drive.File
 	}
 
 	settled, err := p.process(ctx, file)
-	if err != nil {
+
+	// Not every error is a failure. When the execution suspends, for a retry
+	// delay or a reviewer, the operation it is blocked on returns a signal
+	// that must be passed on unchanged. A failure is an error of one of the
+	// SDK's public types, and all of those match OperationError.
+	var failure *durable.OperationError
+	if errors.As(err, &failure) {
 		return drive.File{}, p.fail(ctx, file, err)
 	}
 
-	return settled, nil
+	return settled, err
 }
 
 // process takes a registered upload through analysis, review and publishing.
@@ -148,8 +154,10 @@ const failedNote = "could not be processed"
 func (p *Pipeline) fail(ctx durable.Context, file drive.File, cause error) error {
 	ctx.Logger().Error("upload failed", "key", file.Key, "error", cause)
 
+	// If this step fails or suspends in turn, its own error is the one to
+	// return: the cause is already in the log.
 	if err := p.save(ctx, "mark-failed", file.Settled(drive.StatusFailed, failedNote)); err != nil {
-		return errors.Join(cause, err)
+		return err
 	}
 
 	return cause
