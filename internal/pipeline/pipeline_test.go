@@ -108,6 +108,25 @@ func TestBrokenImageIsNotRetried(t *testing.T) {
 	}
 }
 
+func TestFailedAnalysisMarksTheUploadFailed(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t, &drivetest.Vision{Err: drive.ErrUnsupportedImage})
+
+	h.endsFailed(t, catPhoto)
+}
+
+func TestFailedThumbnailMarksTheUploadFailed(t *testing.T) {
+	t.Parallel()
+
+	const brokenPhoto = "users/alice/broken.png"
+
+	h := newHarness(t, aCat())
+	h.objects.Add(drive.Object{Bucket: uploadBucket, Key: brokenPhoto}, []byte("not an image"))
+
+	h.endsFailed(t, brokenPhoto)
+}
+
 func TestOtherFileTypesAreRejectedWithoutAnalysis(t *testing.T) {
 	t.Parallel()
 

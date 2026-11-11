@@ -80,6 +80,18 @@ func (p *Pipeline) Handle(ctx durable.Context, event events.S3Event) (drive.File
 		return drive.File{}, err
 	}
 
+	settled, err := p.process(ctx, file)
+	if err != nil {
+		return drive.File{}, p.fail(ctx, file, err)
+	}
+
+	return settled, nil
+}
+
+// process takes a registered upload through analysis, review and publishing.
+func (p *Pipeline) process(ctx durable.Context, file drive.File) (drive.File, error) {
+	upload := file.Upload
+
 	if !upload.IsImage() {
 		return p.settle(ctx, "reject-unsupported", file.Settled(drive.StatusRejected, "not a supported image type"))
 	}
@@ -124,6 +136,23 @@ func (p *Pipeline) save(ctx durable.Context, step string, file drive.File) error
 	})
 
 	return err
+}
+
+// failedNote is what the owner reads about an upload the pipeline gave up on.
+// The cause goes to the log: it can name buckets and functions.
+const failedNote = "could not be processed"
+
+// fail records that the pipeline gave up on an upload, so the catalog does
+// not keep saying PROCESSING for an execution that has ended. The execution
+// itself still fails, with the error that stopped it.
+func (p *Pipeline) fail(ctx durable.Context, file drive.File, cause error) error {
+	ctx.Logger().Error("upload failed", "key", file.Key, "error", cause)
+
+	if err := p.save(ctx, "mark-failed", file.Settled(drive.StatusFailed, failedNote)); err != nil {
+		return errors.Join(cause, err)
+	}
+
+	return cause
 }
 
 // settle writes the final record and returns it as the execution's result.

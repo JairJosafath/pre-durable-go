@@ -19,6 +19,7 @@ browser ──presigned PUT──▶ S3 uploads ──ObjectCreated──▶ dur
    index-labels               Map              ──▶ DynamoDB
    discard-upload             Parallel         ──▶ S3 deletes (rejected uploads)
    mark-ready / mark-rejected step
+   mark-failed                step             (when any stage above gives up)
 ```
 
 ## Layout
@@ -89,8 +90,8 @@ make test-workflow
 `test-workflow` prints the operation tree of every execution. The tests run
 the real handler on the SDK's local runner, with in-memory fakes behind the
 workflow's interfaces. They cover publishing, retries on a virtual clock, a
-non-retryable failure, and a review that is approved, rejected, or never
-answered.
+non-retryable failure, an upload that ends as `FAILED`, and a review that is
+approved, rejected, or never answered.
 
 ```bash
 make lint

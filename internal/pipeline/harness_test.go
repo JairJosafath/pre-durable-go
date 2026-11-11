@@ -99,6 +99,28 @@ func (h *harness) decide(t *testing.T, review *drive.Review, decision drive.Deci
 	}
 }
 
+// endsFailed runs an upload that the pipeline cannot process, and checks
+// that the owner gets to see that.
+func (h *harness) endsFailed(t *testing.T, key string) {
+	t.Helper()
+
+	// The execution still fails: a failure stays visible as one.
+	result := h.run(t, key)
+	if result.Status != durabletest.Failed {
+		t.Fatalf("status = %s, want FAILED", result.Status)
+	}
+
+	// But the owner is not left looking at PROCESSING forever.
+	file, _ := h.catalog.File(key)
+	if file.Status != drive.StatusFailed || file.Note == "" {
+		t.Errorf("catalog record = %+v, want FAILED with a note", file)
+	}
+
+	if result.Operation("mark-failed") == nil {
+		t.Errorf("the mark-failed operation never ran:\n%s", result.FormatTree())
+	}
+}
+
 // file returns the catalog record of the cat photo.
 func (h *harness) file(t *testing.T) drive.File {
 	t.Helper()
