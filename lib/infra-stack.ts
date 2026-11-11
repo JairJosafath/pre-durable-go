@@ -1,16 +1,19 @@
-import * as cdk from 'aws-cdk-lib/core';
+import { Duration, Stack, StackProps } from 'aws-cdk-lib/core';
+import {Function, Runtime, Code, Architecture} from 'aws-cdk-lib/aws-lambda'
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import path from 'path';
 
-export class InfraStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+export class InfraStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const fn = new Function(this, 'PreDurableFunction', {
+      runtime: Runtime.PROVIDED_AL2023,
+      architecture: Architecture.ARM_64,
+      handler: 'bootstrap',
+      code: Code.fromAsset(path.join(__dirname, '..', 'src')),
+      durableConfig: { executionTimeout: Duration.hours(1), retentionPeriod: Duration.days(30) }, // 1 hour timeout, 30 days retention
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'InfraQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
   }
 }
