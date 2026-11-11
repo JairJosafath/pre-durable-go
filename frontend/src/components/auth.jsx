@@ -1,27 +1,19 @@
-import React, { Ref } from "react";
-
-const baseUrl = process.env.NEXT_PUBLIC_ENDPOINT||"";
+import React from "react";
+import { api } from "@/lib/api";
 
 export default function Auth({ setAuth }) {
   const username = React.useRef(null);
     const password = React.useRef(null);
   const [error, setError] = React.useState(null);
   async function signIn (){
-    console.log({username,password})
     if (!username || !password) return;
     const user = username?.current?.value
     const pass = password?.current?.value
 
-    const response = await fetch(baseUrl+"/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username: user, password: pass }),
-    })
+    const response = await api("/auth/login", { method: "POST", body: { username: user, password: pass } });
 
     const result = await response.json();
-    const token = result.AuthenticationResult.IdToken;
+    const token = result.AuthenticationResult?.IdToken;
 
     if (token) {
     localStorage.setItem("auth", JSON.stringify({ username: user, authenticated: true, idToken: token, exp: Date.now() + 60 * 60 * 1000}));

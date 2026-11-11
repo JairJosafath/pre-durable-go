@@ -1,8 +1,16 @@
+import { useEffect } from "react";
 import useThumber from "@/hooks/useThumber";
-const baseUrl = process.env.NEXT_PUBLIC_ENDPOINT||"";
+import ReviewPanel from "@/components/review.panel";
 
-export default function PhotosContainer({ token }) {
-  const { thumbs, photo, setPhoto, loading, error, setReload } = useThumber(token,"");
+export default function PhotosContainer({ token, reload, setReload: setUploaded }) {
+  const { thumbs, pending, processing, photo, setPhoto, setReload } = useThumber(token, "");
+
+  // A finished upload asks for a fresh listing.
+  useEffect(() => {
+    if (!reload) return;
+    setReload(true);
+    setUploaded(false);
+  }, [reload, setReload, setUploaded]);
 
   return (
     <div>
@@ -17,6 +25,14 @@ export default function PhotosContainer({ token }) {
 
       </div>
       
+      {processing.length > 0 && (
+        <p className="mx-12 text-neutral-400">
+          Processing {processing.map((file) => file.title).join(", ")}…
+        </p>
+      )}
+
+      <ReviewPanel token={token} pending={pending} onDecided={() => setReload(true)} />
+
       <main className="grid grid-cols-4 gap-1 auto-rows-max p-2 mx-12">
         {thumbs?.slice(0, 10).map(({ title, url }, index) => (
           <div key={index}>

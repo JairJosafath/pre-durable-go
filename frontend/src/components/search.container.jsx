@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
-const baseUrl = process.env.NEXT_PUBLIC_ENDPOINT||"";
 import useThumber from "@/hooks/useThumber";
 
 export default function SearchContainer({ token, search, setSearch }) {
-    const { thumbs, photo, setPhoto, loading, error } = useThumber(token, search);
+    const { thumbs, photo, setPhoto } = useThumber(token, search);
 
     return(
         <div className="m-6 bg-neutral-900 p-4">
