@@ -95,14 +95,35 @@ GLYPH = [
     '<path d="M-10 -13 L-22 0 L-10 13 M10 -13 L22 0 L10 13 M4 -17 L-4 17"/>',
     '<path d="M5 -21 L-11 3 L1 3 L-5 21 L11 -3 L-1 -3 Z" fill="@C@" stroke="none"/>',
     '<path d="M0 -19 L21 17 L-21 17 Z"/><path d="M0 -6 L0 5"/><circle cx="0" cy="11" r="1.5" fill="@C@" stroke="none"/>',
-    '<path d="M-17 17 L5 -5"/><path d="M18.9 -15.31 A9 9 0 1 1 3.37 -15.77"/>',
+    '<rect x="-23" y="-18" width="46" height="36" rx="6"/><path d="M-13 -7 L-5 0 L-13 7 M1 8 L12 8"/>',
     '<path d="M-7.65 5.51 A13 13 0 1 1 7.91 5.32"/><path d="M-6 13 L6 13 M-4 20 L4 20"/>',
 ]
+# Brand logos, copied from github.com/glincker/thesvg (public/icons/<name>) into logos/. Trademarks belong to their owners.
+# The Go gopher was designed by Renee French and is licensed CC BY 4.0.
+LG = S + '/logos'
+def logo_inner(name):
+    t = rd(f'{LG}/{name}.svg')
+    vb = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', t)
+    t = re.sub(r'<\?xml[^>]*\?>|<title>.*?</title>|<!--.*?-->', '', t, flags=re.S)
+    t = re.search(r'<svg[^>]*>(.*)</svg>', t, re.S).group(1)
+    t = re.sub(r'\s+id="[^"]*"', '', t)
+    t = re.sub(r'>\s+<', '><', t).strip()
+    return float(vb.group(1)), float(vb.group(2)), t
+def logo_svg(name, label, x, y, h):
+    w0, h0, inner = logo_inner(name)
+    w = round(h * w0 / h0)
+    return (f'<svg id="logo-{name}" aria-label="{label}" style="position:absolute;left:{x}px;top:{y}px" width="{w}" height="{h}" '
+            f'viewBox="0 0 {w0:g} {h0:g}">{inner}</svg>\n')
+def gopher_g(cx, cy, h):
+    w0, h0, inner = logo_inner('gopher')
+    k = h / h0
+    return f'<g transform="translate({cx - w0 * k / 2:.1f} {cy - h / 2:.1f}) scale({k:.4f})">{inner}</g>'
+LOGOS = {'demo-data': ('aws-dynamodb', 'Amazon DynamoDB', 1712, 112, 80)}   # why.html (hand-written) carries aws-lambda at the same spot
 # Arc states: [centre x, centre y, radius, icon radius, icon step, angle of first icon, glow angle, glow distance beyond the arc, glow radius]
 BIGR = [960, 1100, 1157, 1217, 5.2, -44, -37, 160, 520]
 def BIGL(k): return [960, 1100, 1157, 1217, 5.2, round(41 - 5.2 * k, 2), 37, 160, 520]
 def SMALL(k): return [430, 430, 430, 485, 9.5, round(45 - 9.5 * k, 2), 45, 110, 330]
-def arc_svg(s, foc, oc='#006E8A'):
+def arc_svg(s, foc, oc='#006E8A', show_icons=True, extra=''):
     # A still picture of the arc. It must match what the canvas in gonav.js draws for the same state.
     pt = lambda phi, r: (s[0] - r * math.sin(math.radians(phi)), s[1] - r * math.cos(math.radians(phi)))
     gx, gy = pt(s[6], s[2] + s[7])
@@ -111,7 +132,7 @@ def arc_svg(s, foc, oc='#006E8A'):
            '<stop offset="0" stop-color="rgb(0,173,216)" stop-opacity="0.8"/><stop offset="0.32" stop-color="rgb(0,173,216)" stop-opacity="0.42"/>'
            '<stop offset="0.62" stop-color="rgb(0,173,216)" stop-opacity="0.2"/><stop offset="1" stop-color="rgb(0,173,216)" stop-opacity="0"/></radialGradient>')
     icons = ''
-    for j in range(5):
+    for j in range(5 if show_icons else 0):
         x, y = pt(s[5] + j * s[4], s[3])
         if x < -60 or x > 1980 or y < -60 or y > 600: continue
         f = 1 if j == foc else 0
@@ -123,17 +144,19 @@ def arc_svg(s, foc, oc='#006E8A'):
         icons += (f'<g transform="translate({x:.1f} {y:.1f}) scale({1.3 if f else 0.8})" opacity="{1 if f else 0.6}" fill="none" stroke="{col}" '
                   f'stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">{GLYPH[j].replace("@C@", col)}</g>')
     out += (f'</defs><path fill-rule="evenodd" fill="url(#ag)" d="M0 0 H1920 V540 H0 Z M{s[0] - s[2]} {s[1]} a{s[2]} {s[2]} 0 1 0 {2 * s[2]} 0 a{s[2]} {s[2]} 0 1 0 {-2 * s[2]} 0 Z"/>')
-    return out + icons + '</svg>\n'
+    return out + icons + extra + '</svg>\n'
+GOPHER = (1792, 124, 190)        # centre x, centre y, height of the gopher in the opener's arc
 def arc_nav(idx, prev, teal=False, intro=False):
     # Go section. Every slide carries a still SVG of the arc; topic cards also carry a canvas that paints over
     # it and animates: start state -> big arc on this topic -> ring and line -> shrink to the compact arc.
-    if teal:                       # section opener: big, resting in the top-right, nothing focused
-        return arc_svg(BIGR, -1, '#F6F4EE'), ''
+    if teal:                       # section opener: big, resting in the top-right, the gopher instead of topic icons
+        return arc_svg(BIGR, -1, show_icons=False, extra=gopher_g(*GOPHER)), ''
     if prev is None:               # content slide: compact arc at rest
         return arc_svg(SMALL(idx), idx), ''
     s0, f0 = (BIGR, -1) if prev < 0 else (SMALL(prev), prev)
     defs = f'var S0={s0},S1={BIGL(idx)},S2={SMALL(idx)},F0={f0},F1={idx};\n'
-    return arc_svg(s0, f0) + xe(0, 0, 1920, 540, scene('gonav', 1920, 540, 100000, 1, defs), 'nav-arc'), ''
+    # first card: the opener shows no topic icons, so the start state has none either; the canvas fades them in
+    return arc_svg(s0, f0, show_icons=prev >= 0) + xe(0, 0, 1920, 540, scene('gonav', 1920, 540, 100000, 1, defs), 'nav-arc'), ''
 def nav(group, idx, dark=False, intro=False, teal=False):
     rgb, chip, on, off =('24,35,46', '#5DC9E2', '#101820', '#F6F4EE') if dark else ('236,232,221', '#006E8A', '#F6F4EE', '#006E8A')
     fadeo = [1, 0.3, 0.13, 0.06, 0.03]
@@ -291,6 +314,7 @@ for n, (sid, group, idx, fl) in enumerate(ORDER):
     prv = ORDER[n - 1] if n else None
     pidx = None
     if group == 'go' and prv and prv[1] == 'go' and prv[2] != idx: pidx = prv[2]
+    if sid in LOGOS: text = text.replace('<aside>', logo_svg(*LOGOS[sid]) + '<aside>', 1)
     wr(sid, finish(text, group, idx, trans, dark=('d' in fl), intro=('i' in fl), teal=('t' in fl), prev=pidx))
     changed.append(sid)
 
