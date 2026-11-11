@@ -210,7 +210,7 @@ func rank(scores []float64) ([]drive.Label, error) {
 
 	labels := make([]drive.Label, len(names))
 	for index, name := range names {
-		labels[index] = drive.Label{Name: name, Confidence: scores[index+offset] * percent}
+		labels[index] = drive.Label{Name: name, Confidence: scores[index+offset] * percent, Aliases: generalNames(name)}
 	}
 
 	slices.SortFunc(labels, func(a, b drive.Label) int {
@@ -225,4 +225,17 @@ func rank(scores []float64) ([]drive.Label, error) {
 	})
 
 	return labels, nil
+}
+
+// generalNames returns the everyday word for a class, to search by. ImageNet
+// classes are specific: a cat is a "Siamese cat", a car a "passenger car".
+// Rekognition answers "Cat" and adds aliases; this classifier knows no such
+// thing, so the last word of a class name stands in for one.
+func generalNames(class string) []string {
+	words := strings.Fields(class)
+	if len(words) < 2 { //nolint:mnd // a single word is already as general as the name gets
+		return nil
+	}
+
+	return []string{words[len(words)-1]}
 }

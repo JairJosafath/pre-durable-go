@@ -74,7 +74,8 @@ func TestDetectLabelsReturnsTheMostLikelyClasses(t *testing.T) {
 		t.Fatalf("DetectLabels: %v", err)
 	}
 
-	want := []drive.Label{{Name: "tabby", Confidence: 82}, {Name: "tiger cat", Confidence: 11}}
+	// "tiger cat" can also be found as "cat"; "tabby" has no more general word in its name.
+	want := []drive.Label{{Name: "tabby", Confidence: 82}, {Name: "tiger cat", Confidence: 11, Aliases: []string{"cat"}}}
 	if !reflect.DeepEqual(labels, want) {
 		t.Errorf("labels = %+v, want %+v", labels, want)
 	}
