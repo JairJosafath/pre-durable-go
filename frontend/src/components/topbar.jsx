@@ -17,7 +17,7 @@ export default function Topbar({ searchInput, input, setFile, auth, setSearch}) 
               list="label-suggestions"
               onChange={(e) => suggest(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") setSearch(searchInput.current.value);
+                if (e.key === "Enter") setSearch(searchInput.current.value.trim());
               }}
             />
             <datalist id="label-suggestions">
@@ -33,7 +33,7 @@ export default function Topbar({ searchInput, input, setFile, auth, setSearch}) 
               stroke="currentColor"
               className="w-6 h-6 hover:text-primary-500 cursor-pointer hover:bg-white hover:text-black hover:h-10 hover:py-2 w-8 rounded-r-md active:scale-95 active:bg-neutral-200"
               onClick={() => {
-                setSearch(searchInput.current.value);
+                setSearch(searchInput.current.value.trim());
               }}
             >
               <path

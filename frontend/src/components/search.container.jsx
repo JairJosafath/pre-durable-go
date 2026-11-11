@@ -1,7 +1,7 @@
 import useThumber from "@/hooks/useThumber";
 
 export default function SearchContainer({ token, search, setSearch }) {
-    const { thumbs, photo, setPhoto, hasMore, loadMore } = useThumber(token, search);
+    const { thumbs, loading, photo, setPhoto, hasMore, loadMore } = useThumber(token, search);
 
     return(
         <div className="m-6 bg-neutral-900 p-4">
@@ -12,6 +12,11 @@ export default function SearchContainer({ token, search, setSearch }) {
 </svg>
 
         </div>
+        {!loading && thumbs.length === 0 && (
+          <p className="p-2 text-neutral-400">
+            No photos have a label that starts with &quot;{search}&quot;. The search box suggests your labels as you type.
+          </p>
+        )}
         <main className="grid grid-cols-4 gap-1 auto-rows-max p-2">
         {thumbs?.map(({ title, url }, index) => (
           <div key={index}>
