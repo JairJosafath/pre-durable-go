@@ -1,9 +1,14 @@
-*.js
-!jest.config.js
-*.d.ts
-node_modules
+# Go build output
+/bin/
+bootstrap
+*.test
+coverage.out
 
-# CDK asset staging directory
-.cdk.staging
-cdk.out
-src/bootstrap
+# Local stack data and downloaded models
+/local/.data/
+/local/models/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
