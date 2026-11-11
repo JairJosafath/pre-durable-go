@@ -1,60 +1,59 @@
-<section id="demo" data-transition="magic" style="background:#101820;color:#F6F4EE;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<section id="demo" data-transition="magic" style="background:#F6F4EE;color:#101820;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 112px;display:flex;flex-direction:column;gap:40px">
 <div style="display:flex;flex-direction:column;gap:12px">
-<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#5DC9E2">Demo</p>
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">Demo · Architecture</p>
 <h2 style="font-size:64px;font-weight:600;line-height:1.1">PrimeDrive, the Go Durable way</h2>
-<p style="font-size:30px;line-height:1.4;color:#A9B7C4">Upload a photo and it is analysed, thumbnailed, reviewed when flagged, and indexed. One durable function replaces the Step Functions state machine, its trigger function and the ASL definition.</p>
 </div>
-<div style="display:flex;gap:16px;align-items:center">
-<div style="flex:1;display:flex;flex-direction:column;gap:8px;border:2px dashed #5B6B7A;border-radius:16px;padding:20px">
-<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#A9B7C4">S3 event</p>
-<h3 style="font-size:30px;font-weight:600;line-height:1.2">Upload</h3>
-<p style="font-size:24px;line-height:1.4;color:#A9B7C4">An upload starts an execution on the live alias</p>
-</div>
-<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5DC9E2"></x-shape>
-<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#1A2633;border:2px solid #5DC9E2;border-radius:16px;padding:20px">
-<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#5DC9E2">Step</p>
-<h3 style="font-size:30px;font-weight:600;line-height:1.2">Register</h3>
-<p style="font-size:24px;line-height:1.4;color:#A9B7C4">Saves the file record in DynamoDB as PROCESSING</p>
-</div>
-<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5DC9E2"></x-shape>
-<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#1A2633;border:2px solid #5DC9E2;border-radius:16px;padding:20px">
-<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#5DC9E2">Go + InvokeAsync</p>
-<h3 style="font-size:30px;font-weight:600;line-height:1.2">Analyze</h3>
-<p style="font-size:24px;line-height:1.4;color:#A9B7C4">Rekognition steps and the thumbnail Lambda, side by side</p>
-</div>
-<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5DC9E2"></x-shape>
-<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#1A2633;border:2px solid #5DC9E2;border-radius:16px;padding:20px">
-<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#5DC9E2">WaitForCallback</p>
-<h3 style="font-size:30px;font-weight:600;line-height:1.2">Review</h3>
-<p style="font-size:24px;line-height:1.4;color:#A9B7C4">Flagged or unsure: a person decides within 24 hours</p>
-</div>
-<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5DC9E2"></x-shape>
-<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#1A2633;border:2px solid #5DC9E2;border-radius:16px;padding:20px">
-<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.4;color:#5DC9E2">Map</p>
-<h3 style="font-size:30px;font-weight:600;line-height:1.2">Index</h3>
-<p style="font-size:24px;line-height:1.4;color:#A9B7C4">One step per label makes the photo searchable</p>
-</div>
-</div>
-<div style="display:flex;gap:32px">
-<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:2px solid #5DC9E2;padding:20px 0px 0px">
-<p style="font-size:24px;font-weight:600;color:#5DC9E2">Watch for 1</p>
-<p style="font-size:30px;line-height:1.3">The upload starts an execution: no trigger function</p>
-</div>
-<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:2px solid #5DC9E2;padding:20px 0px 0px">
-<p style="font-size:24px;font-weight:600;color:#5DC9E2">Watch for 2</p>
-<p style="font-size:30px;line-height:1.3">At review it suspends: nothing runs, for up to a day</p>
-</div>
-<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:2px solid #5DC9E2;padding:20px 0px 0px">
-<p style="font-size:24px;font-weight:600;color:#5DC9E2">Watch for 3</p>
-<p style="font-size:30px;line-height:1.3">POST /reviews resumes the same execution</p>
-</div>
-<div style="flex:1;display:flex;flex-direction:column;gap:8px;border-top:2px solid #5DC9E2;padding:20px 0px 0px">
-<p style="font-size:24px;font-weight:600;color:#5DC9E2">Watch for 4</p>
-<p style="font-size:30px;line-height:1.3">The photo is now found by what is in it</p>
-</div>
-</div>
-<div id="nav-strip" style="position:absolute;left:1816px;top:0px;width:104px;height:1080px;background:linear-gradient(to bottom, rgba(24,35,46,0) 0%, rgba(24,35,46,1) 34%, rgba(24,35,46,1) 66%, rgba(24,35,46,0) 100%)"></div>
-<x-icon id="nav-demo-0" name="Play" style="position:absolute;left:1832px;top:504px;width:72px;height:72px;color:#5DC9E2;opacity:1"></x-icon>
-<x-icon id="nav-demo-1" name="Database" style="position:absolute;left:1832px;top:616px;width:72px;height:72px;color:#F6F4EE;opacity:0.3"></x-icon>
-<aside>14:00 to 19:00, five minutes. The stages and operation names are the ones in internal/pipeline. Script: 1) Infra, 45 seconds. Open infra/lib/constructs/upload-pipeline.ts. durableConfig is the only infrastructure difference between a durable function and a regular one: execution timeout is the 24 hour review timeout plus one hour, retention is 14 days, while the function timeout for a single invocation is one minute. A durable function is always invoked through a version or alias, here "live", so an execution that started on one version keeps replaying on that version even if you deploy while it waits. S3 invokes the alias directly for keys under users/. 2) Upload a photo in the frontend (presigned URL). Use one that needs review: a moderation flag, or no label at 80 percent confidence. A clean photo is approved without waiting and goes straight to indexing. 3) Open the execution: register-upload, detect-labels, detect-moderation and generate-thumbnail are checkpointed, and it is waiting at human-review. The analysis ran on its own goroutine with durable.Go while durable.InvokeAsync called the thumbnailer; durable.Join awaited both. Point out that no invocation is running. 4) Approve with POST /reviews. The reviewer Lambda reads the callback ID from the file record and calls SendDurableExecutionCallbackSuccess. The same execution resumes: replay skips everything already checkpointed, then durable.Map indexes each label in its own step and mark-ready sets the status to READY. 5) Search with GET /query?index=&lt;label&gt; and show the photo. 6) If time allows, say what happens on reject or after 24 hours without a decision: durable.Parallel deletes the original and the thumbnail and the record is marked REJECTED. If a step fails for good, the record is marked FAILED. Mention that catalog items are keyed by what they describe, so the index step is safe to retry and replay. Keep a finished execution open in another tab in case the live one misbehaves.</aside>
+<x-embed style="position:absolute;left:128px;top:264px;width:1664px;height:640px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
+<canvas id="c"></canvas>
+<script>
+(function(){
+var c=document.getElementById('c'),g=c.getContext('2d'),BW=1664,BH=640,END=13,CLEAR=0;
+var F=parseFloat((location.hash.match(/t=([\d.]+)/)||[])[1]);
+function fit(){var d=Math.min(window.devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;g.setTransform(c.width/BW,0,0,c.height/BH,0,0)}
+function cl(v){return Math.max(0,Math.min(1,v))}
+function P(t,a,b){return cl((t-a)/(b-a))}
+function mix(a,b,k){return a+(b-a)*k}
+function eo(k){return 1-Math.pow(1-k,3)}
+function eio(k){return k>.5?1-Math.pow(-2*k+2,3)/2:4*k*k*k}
+function bk(k){var s=1.70158;return 1+(s+1)*Math.pow(k-1,3)+s*Math.pow(k-1,2)}
+function win(t,a,b){return Math.min(P(t,a,a+.35),1-P(t,b-.35,b))}
+var CY='#5DC9E2',OR='#F2A65A',PK='#FF7A9A',TX='#E6EDF3',MU='#8B9BAA',BG='#101820',LN='#2A3A4A';
+var SA='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',MO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+function txt(s,X,Y,f,col,al,alg){if(!(al>0))return;g.globalAlpha=al;g.font=f;g.fillStyle=col;g.textAlign=alg||'left';g.textBaseline='middle';g.fillText(s,X,Y);g.globalAlpha=1}
+function rr(X,Y,w,h,r){g.beginPath();g.moveTo(X+r,Y);g.arcTo(X+w,Y,X+w,Y+h,r);g.arcTo(X+w,Y+h,X,Y+h,r);g.arcTo(X,Y+h,X,Y,r);g.arcTo(X,Y,X+w,Y,r);g.closePath()}
+function disc(X,Y,r,col,al){if(!(al>0))return;if(!(r>0))return;g.globalAlpha=al;g.beginPath();g.arc(X,Y,r,0,6.2832);g.fillStyle=col;g.fill();g.globalAlpha=1}
+function ring(X,Y,r,col,lw,al){if(!(al>0))return;if(!(r>0))return;g.globalAlpha=al;g.beginPath();g.arc(X,Y,r,0,6.2832);g.strokeStyle=col;g.lineWidth=lw;g.stroke();g.globalAlpha=1}
+function seg(x1,y1,x2,y2,col,lw,al,dash){if(!(al>0))return;g.globalAlpha=al;if(dash)g.setLineDash([8,10]);g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.strokeStyle=col;g.lineWidth=lw;g.lineCap='round';g.stroke();g.setLineDash([]);g.globalAlpha=1}
+var IC={l:new Path2D('M28,66L15.6,66L29.3,37.3L35.5,50.1L28,66ZM30.2,34.6C30.1,34.2 29.7,34 29.3,34L29.3,34C28.9,34 28.6,34.2 28.4,34.6L13.1,66.6C12.9,66.9 13,67.2 13.2,67.5C13.3,67.8 13.7,68 14,68L28.6,68C29,68 29.4,67.8 29.5,67.4L37.6,50.5C37.7,50.3 37.7,49.9 37.6,49.7L30.2,34.6ZM65,66L52.7,66L32.9,24.6C32.7,24.2 32.3,24 32,24L23.9,24L23.9,14L39.7,14L59.4,55.4C59.6,55.8 59.9,56 60.3,56L65,56L65,66ZM66,54L61,54L41.3,12.6C41.1,12.2 40.7,12 40.4,12L22.9,12C22.3,12 21.9,12.4 21.9,13L21.9,25C21.9,25.3 22,25.5 22.2,25.7C22.4,25.9 22.6,26 22.9,26L31.3,26L51.1,67.4C51.3,67.8 51.6,68 52,68L66,68C66.6,68 67,67.6 67,67L67,55C67,54.4 66.6,54 66,54L66,54Z'),s:new Path2D('M47.8,30.9L48.2,28.2C51.8,30.3 51.8,31.2 51.8,31.2C51.8,31.2 51.2,31.7 47.8,30.9L47.8,30.9ZM45.9,30.4C39.8,28.5 31.2,24.6 27.8,23C27.8,22.9 27.8,22.9 27.8,22.9C27.8,21.6 26.7,20.5 25.4,20.5C24.1,20.5 23,21.6 23,22.9C23,24.2 24.1,25.3 25.4,25.3C26,25.3 26.5,25.1 26.9,24.8C31,26.7 39.4,30.5 45.6,32.4L43.2,49.6C43.2,49.6 43.2,49.7 43.2,49.7C43.2,51.2 36.5,54 25.5,54C14.4,54 7.6,51.2 7.6,49.7C7.6,49.7 7.6,49.6 7.6,49.6L2.5,12.4C6.9,15.4 16.4,17 25.5,17C34.6,17 44,15.4 48.4,12.4L45.9,30.4ZM2,8.5C2.1,7.2 9.6,2 25.5,2C41.4,2 48.9,7.2 49,8.5L49,8.9C48.1,11.9 38.3,15 25.5,15C12.6,15 2.8,11.9 2,8.9L2,8.5ZM51,8.5C51,5 41.1,0 25.5,0C9.9,0 0,5 0,8.5L0.1,9.3L5.6,49.8C5.8,54.3 17.9,56 25.5,56C35,56 45,53.8 45.2,49.8L47.6,32.9C48.9,33.2 50,33.4 50.9,33.4C52,33.4 52.8,33.1 53.3,32.5C53.7,32 53.9,31.5 53.8,30.8C53.5,29.5 51.9,28 48.5,26.1L50.9,9.3L51,8.5Z'),d:new Path2D('M52.1,54.9C48.7,57.5 41.7,59 35,59C28.3,59 21.3,57.5 18,54.8L18,60.3L18,60.3C18,63 25,66 35,66C45.1,66 52.1,63 52.1,60.3L52.1,54.9ZM52.1,44.5L54.1,44.5L54.1,44.5C54.1,45.7 53.5,46.9 52.3,47.9C53.7,49.1 54.1,50.4 54.1,51.3C54.1,51.3 54.1,51.3 54.1,51.3L54.1,60.3L54.1,60.3C54.1,65.3 44.3,68 35,68C25.8,68 16,65.3 16,60.3C16,60.3 16,60.3 16,60.3L16,51.3C16,51.3 16,51.2 16,51.2C16,50.4 16.4,49.1 17.8,47.9C16.4,46.6 16,45.4 16,44.5L16,44.5C16,44.5 16,44.5 16,44.5L16,35.5C16,35.5 16,35.5 16,35.5C16,34.6 16.4,33.4 17.8,32.1C16.4,30.9 16,29.6 16,28.8L16,28.8C16,28.8 16,28.8 16,28.8L16,19.7C16,19.7 16,19.7 16,19.7C16,14.7 25.8,12 35,12C40.3,12 45.3,12.8 48.8,14.3L48,16.1C44.7,14.8 40,14 35,14C25,14 18,17 18,19.7C18,22.4 25,25.5 35,25.5C35.3,25.5 35.6,25.5 35.8,25.4L35.9,27.4C35.6,27.4 35.3,27.4 35,27.4C28.3,27.4 21.3,26 18,23.3L18,28.7L18,28.7L18,28.8C18,29.8 19.1,30.7 20,31.3C22.7,33 27.5,34.2 32.9,34.4L32.8,36.4C27.3,36.2 22.6,35 19.5,33.3C18.7,33.9 18,34.6 18,35.5C18,38.2 25,41.2 35,41.2C36,41.2 37,41.2 38,41.1L38.1,43.1C37.1,43.2 36.1,43.2 35,43.2C28.3,43.2 21.3,41.8 18,39.1L18,44.5L18,44.5C18,45.6 19.1,46.5 20,47.1C23,49 28.8,50.2 35,50.2L35.5,50.2L35.5,52.2L35,52.2C28.7,52.2 23,51.1 19.5,49.1C18.7,49.6 18,50.4 18,51.3C18,54 25,57 35,57C45.1,57 52.1,54 52.1,51.3L52.1,51.3L52.1,51.3C52.1,50.4 51.4,49.6 50.6,49.1C50.1,49.3 49.6,49.6 49,49.9L48.2,48C49,47.7 49.6,47.4 50.1,47.1C51,46.5 52.1,45.6 52.1,44.5L52.1,44.5ZM60.7,30L55,30C54.7,30 54.4,29.9 54.2,29.6C54,29.3 54,29 54.1,28.7L57.5,20.1L44.6,20.1L38.6,32L45,32C45.3,32 45.6,32.2 45.8,32.4C46,32.7 46.1,33 46,33.3L40.3,51.1L60.7,30ZM63.7,29.7L38.7,55.5C38.5,55.7 38.3,55.8 38,55.8C37.8,55.8 37.6,55.8 37.5,55.7C37.1,55.5 36.9,55 37,54.6L43.6,34L37,34C36.7,34 36.3,33.8 36.1,33.6C36,33.3 36,32.9 36.1,32.6L43.1,18.7C43.3,18.4 43.6,18.2 44,18.2L59,18.2C59.3,18.2 59.6,18.3 59.8,18.6C60,18.9 60.1,19.2 59.9,19.5L56.5,28L63,28C63.4,28 63.8,28.3 63.9,28.6C64.1,29 64,29.4 63.7,29.7L63.7,29.7ZM19.5,60.7C20.9,61.5 22.7,62.1 24.8,62.7L25.2,60.7C23.3,60.3 21.7,59.6 20.4,58.9L19.5,60.7ZM24.8,46.8L25.2,44.9C23.3,44.4 21.7,43.8 20.4,43.1L19.5,44.8C20.9,45.6 22.7,46.3 24.8,46.8L24.8,46.8ZM19.5,28.9L20.4,27.2C21.7,27.9 23.3,28.5 25.2,29L24.8,30.9C22.7,30.4 20.9,29.7 19.5,28.9L19.5,28.9Z'),a:new Path2D('M34.1 55.6H37V53.6H34.1V55.6ZM39 55.6H42V53.6H39V55.6ZM27 14.6L14 21.1V61.2L27 65.6V14.6ZM29 27.4V53.6H32V55.6H29V67C29 67.3 28.8 67.6 28.6 67.8C28.4 67.9 28.2 68 28 68C27.9 68 27.8 68 27.7 67.9L12.7 62.9C12.3 62.7 12 62.4 12 61.9V20.5C12 20.1 12.2 19.7 12.6 19.5L27.6 12.1C27.9 11.9 28.2 12 28.5 12.2C28.8 12.3 29 12.7 29 13V25.4H32V27.4H29ZM44 55.6H47V53.6H44V55.6ZM44.1 27.4H47V25.4H44.1V27.4ZM39.1 27.4H42V25.4H39.1V27.4ZM34.1 27.4H37V25.4H34.1V27.4ZM66 21.1L53 14.6V65.6L66 61.2V21.1ZM68 61.9C68 62.4 67.7 62.7 67.3 62.9L52.3 67.9C52.2 68 52.1 68 52 68C51.8 68 51.6 67.9 51.4 67.8C51.2 67.6 51 67.3 51 67V55.6H49.1V53.6H51V27.4H49.1V25.4H51V13C51 12.7 51.2 12.3 51.5 12.2C51.8 12 52.1 11.9 52.4 12.1L67.4 19.5C67.8 19.7 68 20.1 68 20.5V61.9ZM42.9 33.8L41.1 33.1L36.1 46.2L37.9 46.9L42.9 33.8ZM49.7 40.2C50.1 39.8 50.1 39.2 49.7 38.8L45.7 34.7L44.3 36.2L47.6 39.5L44.3 42.8L45.7 44.2L49.7 40.2ZM34.3 44.2L30.3 40.2C29.9 39.8 29.9 39.2 30.3 38.8L34.3 34.7L35.7 36.2L32.4 39.5L35.7 42.8L34.3 44.2Z'),k:new Path2D('M65.3,60.3L51.9,47.3C50.6,49 49,50.6 47.3,51.9L60.3,65.3C61,66 61.8,66 62.3,66C63.1,65.9 63.9,65.4 64.7,64.7C65.4,64 65.8,63.1 66,62.3C66,61.8 66,61 65.3,60.3L65.3,60.3ZM34.1,54.2C45.2,54.2 54.2,45.2 54.2,34.1C54.2,23 45.2,14 34.1,14C23,14 14,23 14,34.1C14,45.2 23,54.2 34.1,54.2L34.1,54.2ZM68,62.6C67.8,63.8 67.1,65.1 66.1,66.1C65.1,67.1 63.8,67.8 62.5,68C62.3,68 62.1,68 61.9,68C60.8,68 59.7,67.6 58.9,66.7L45.6,53.1C42.2,55.1 38.3,56.3 34.1,56.3C21.9,56.3 12,46.3 12,34.1C12,21.9 21.9,12 34.1,12C46.3,12 56.2,21.9 56.2,34.1C56.2,38.3 55.1,42.2 53.1,45.6L66.7,58.9C67.7,59.9 68.1,61.2 68,62.6L68,62.6ZM48.2,34.1C48.2,26.2 42,20 34.1,20C26.2,20 20,26.2 20,34.1C20,42 26.2,48.3 34.1,48.3C42,48.3 48.2,42 48.2,34.1L48.2,34.1ZM50.3,34.1C50.3,43.2 43.2,50.3 34.1,50.3C25.1,50.3 18,43.2 18,34.1C18,25.1 25.1,18 34.1,18C43.2,18 50.3,25.1 50.3,34.1L50.3,34.1ZM27.9,37L25.9,37L25.9,42L30.9,42L30.9,40L27.9,40L27.9,37ZM25.9,30.9L27.9,30.9L27.9,27.9L30.9,27.9L30.9,25.9L25.9,25.9L25.9,30.9ZM37,27.9L40,27.9L40,30.9L42,30.9L42,25.9L37,25.9L37,27.9ZM40,37L42,37L42,42L37,42L37,40L40,40L40,37Z')};
+var N=[['b',120,290,'browser'],['a',430,150,'API Gateway'],['s',430,430,'S3 uploads'],['l',720,64,'presigner'],['l',720,250,'reviewer'],['l',1020,430,'pipeline'],['d',1420,150,'DynamoDB'],['k',1420,318,'Rekognition'],['l',1420,486,'thumbnailer']];
+var E=[[0,1,1],[1,3,1],[0,2,1],[2,5,2],[5,7,2],[5,8,2],[5,6,2],[0,1,3],[1,4,3],[4,5,3],[1,6,4]];
+var PH=[[.9,3.7],[3.7,6.9],[6.9,9.9],[9.9,12.4]];
+var CAP=['Upload: a presigned URL from the API, then straight to S3.','S3 starts the durable function. It analyses, thumbnails and records.','A review suspends it. The reviewer function sends the callback.','Search goes from API Gateway straight to DynamoDB.'];
+function ends(e){var a=N[e[0]],b=N[e[1]],dx=b[1]-a[1],dy=b[2]-a[2],d=Math.sqrt(dx*dx+dy*dy),ux=dx/d,uy=dy/d,m=Math.max(Math.abs(ux),Math.abs(uy)),ra=((e[0]===5?52:40)+10)/m,rb=((e[1]===5?52:40)+16)/m;return [a[1]+ux*ra,a[2]+uy*ra,b[1]-ux*rb,b[2]-uy*rb,ux,uy]}
+function node(n,al){if(!(al>0))return;var X=n[1],Y=n[2],big=n[3]==='pipeline',h=big?52:40;g.globalAlpha=al;rr(X-h,Y-h,2*h,2*h,14);g.fillStyle='#16222E';g.fill();g.strokeStyle=big?CY:LN;g.lineWidth=big?4:2;g.stroke();
+if(n[0]==='b'){rr(X-24,Y-18,48,36,6);g.strokeStyle=TX;g.lineWidth=3;g.stroke();g.beginPath();g.moveTo(X-24,Y-7);g.lineTo(X+24,Y-7);g.stroke()}
+else{g.save();g.translate(X-h*.8,Y-h*.8);g.scale(h*.02,h*.02);g.fillStyle=big?CY:TX;g.fill(IC[n[0]],'evenodd');g.restore()}
+g.globalAlpha=1;txt(n[3],X,Y+h+24,'600 24px '+SA,big?CY:MU,al,'center');if(big)txt('durable function',X,Y+h+56,'500 24px '+SA,MU,al,'center')}
+function draw(t){
+var i,cnt=[0,0,0,0,0],a0=P(t,.2,.8),q;
+for(i=0;E.length>i;i++){q=ends(E[i]);seg(q[0],q[1],q[2],q[3],LN,3,a0)}
+for(i=0;E.length>i;i++){var e=E[i],ph=PH[e[2]-1],j=cnt[e[2]]++,k=eo(P(t,ph[0]+j*.6,ph[0]+j*.6+.8));if(k>0){q=ends(e);var X=mix(q[0],q[2],k),Y=mix(q[1],q[3],k),al=e[2]===4?1:1-.5*P(t,ph[1]-.3,ph[1]);seg(q[0],q[1],X,Y,CY,4,al);g.globalAlpha=al;g.beginPath();g.moveTo(X+q[4]*12,Y+q[5]*12);g.lineTo(X-q[4]*6-q[5]*9,Y-q[5]*6+q[4]*9);g.lineTo(X-q[4]*6+q[5]*9,Y-q[5]*6-q[4]*9);g.closePath();g.fillStyle=CY;g.fill();g.globalAlpha=1}}
+for(i=0;N.length>i;i++){node(N[i],P(t,.15+i*.07,.55+i*.07))}
+for(i=0;4>i;i++){txt(CAP[i],60,604,'500 30px '+SA,TX,win(t,PH[i][0],i===3?99:PH[i][1]))}
+}
+function frame(t){g.clearRect(0,0,BW,BH);if(!CLEAR){g.fillStyle=BG;g.fillRect(0,0,BW,BH)}draw(t);if(!CLEAR){var f=1-P(t,0,.4);if(f>0){g.globalAlpha=f;g.fillStyle=BG;g.fillRect(0,0,BW,BH);g.globalAlpha=1}}}
+var T0=-1,LT=0;
+function fr(n){if(0>T0)T0=n;if(n-LT>900)T0=n;LT=n;frame(Math.min((n-T0)/1000,END));requestAnimationFrame(fr)}
+if(window.IntersectionObserver){new IntersectionObserver(function(e){if(e[0].isIntersecting)T0=-1}).observe(c)}
+function go(){fit();if(!isNaN(F))frame(F)}
+go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
+})();
+</script>
+</x-embed>
+<p style="position:absolute;left:128px;top:920px;width:1664px;font-size:24px;line-height:1.4;color:#3D4852">One durable function replaces the Step Functions state machine, its trigger function and the ASL definition.</p>
+
+<div id="nav-strip" style="position:absolute;left:1816px;top:0px;width:104px;height:1080px;background:linear-gradient(to bottom, rgba(236,232,221,0) 0%, rgba(236,232,221,1) 34%, rgba(236,232,221,1) 66%, rgba(236,232,221,0) 100%)"></div>
+<x-icon id="nav-demo-0" name="Cloud" style="position:absolute;left:1832px;top:504px;width:72px;height:72px;color:#006E8A;opacity:1"></x-icon>
+<x-icon id="nav-demo-1" name="Code" style="position:absolute;left:1832px;top:616px;width:72px;height:72px;color:#006E8A;opacity:0.3"></x-icon>
+<aside>Show the video of the app first, then this slide. No clicks; the diagram plays once, about twelve seconds, in four beats. One, upload: the browser asks the API for a presigned URL (the presigner function) and puts the file straight into S3. Two, the pipeline: S3 invokes the durable function through its live alias, with no trigger function in between. It registers the upload, runs the Rekognition steps while a plain Lambda makes the thumbnail, and writes to DynamoDB. Three, review: when the analysis gives a reason, the execution suspends. POST /reviews reaches the reviewer function, which reads the callback ID from the file record and calls SendDurableExecutionCallbackSuccess; the same execution resumes. Four, search: GET /query, /files and /labels are API Gateway integrations straight onto DynamoDB, with no function at all. Not drawn: Cognito signs users in and API Gateway checks the token on every route; thumbnails go to a second bucket. Infrastructure facts if asked, from infra/lib/constructs/upload-pipeline.ts: durableConfig is the only difference from a regular function; execution timeout is the 24 hour review timeout plus one hour, retention 14 days, and one invocation is limited to one minute.</aside>
 </section>

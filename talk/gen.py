@@ -87,7 +87,7 @@ GROUPS = {
     'how': ['Code', 'Play', 'CheckCircle'],
     'sdk': ['Settings', 'Warning', 'Database', 'Activity'],
     'go': ['Code', 'Lightning', 'Warning', 'Wrench', 'Lightbulb'],
-    'demo': ['Play', 'Database'],
+    'demo': ['Cloud', 'Code'],
 }
 import math
 ACX, ACY, AR, AOFF, ASTEP = 1269, 657, 658, 60, 12
@@ -124,6 +124,26 @@ def go_logo_g(cx, cy, h, col):
     assert 'fill="#fff"' in t
     k = h / h0
     return f'<g transform="translate({cx - w0 * k / 2:.1f} {cy - h / 2:.1f}) scale({k:.4f})">{t.replace('fill="#fff"', f'fill="{col}"')}</g>'
+def aws_path(name):
+    # The mark of an AWS icon as path data for a canvas Path2D, rounded to one decimal to keep embeds small.
+    d = re.search(r'<path[^>]*? d="([^"]*)"', rd(f'{LG}/{name}.svg'), re.S).group(1)
+    d = re.sub(r'-?\d+\.\d+', lambda m: ('%.1f' % float(m.group(0))).rstrip('0').rstrip('.'), d)
+    d = re.sub(r'\s+', ' ', d)
+    return re.sub(r' ?([MLCZHVSQAmlczhvsqa]) ?', r'\1', d).strip()
+def code_html(src):
+    # Go source for a slide: escaped, indentation kept, comments dimmed, «marked» calls in cyan.
+    out = []
+    for line in src.strip('\n').split('\n'):
+        ind = len(line) - len(line.lstrip(' '))
+        t = line.strip().replace('&', '&amp;')
+        if '//' in t:
+            i = t.index('//'); t = t[:i] + '<span style="color:#8B9BAA">' + t[i:] + '</span>'
+        t = t.replace('«', '<span style="color:#5DC9E2">').replace('»', '</span>')
+        out.append('&#160;' * ind + t)
+    return ("<p style=\"font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.5;color:#E6EDF3;white-space:nowrap\">"
+            + '<br>'.join(out) + '</p>')
+def code_slide(sid, title, src, notes, aside):
+    return mk(sid, 'Demo · Code', title, panel(code_html(src), 1160) + rows(notes, 1336, 264, 456), aside)
 LOGOS = {'demo-data': ('aws-dynamodb', 'Amazon DynamoDB', 1720, 112, 72)}   # why.html (hand-written) carries aws-lambda at the same spot
 # Arc states: [centre x, centre y, radius, icon radius, icon step, angle of first icon, glow angle, glow distance beyond the arc, glow radius]
 BIGR = [960, 1100, 1157, 1217, 5.2, -44, -37, 160, 520]
@@ -295,6 +315,79 @@ NEW['demo-data'] = mk('demo-data', 'Demo · Data', 'How PrimeDrive stores an upl
     '<p style="position:absolute;left:128px;top:920px;width:1664px;font-size:24px;line-height:1.4;color:#3D4852">One DynamoDB table. The user ID and file name here are examples.</p>\n',
     'No clicks; the table plays once, about ten seconds. One DynamoDB table holds everything a user uploaded, in that user\'s partition: the partition key is user#, then the Cognito subject. An upload writes one item whose sort key starts with #file#; it carries the status, the labels and the thumbnail key. When the upload is published, each label adds two kinds of item: an index item, #index#, then the search term, then the object key, which is what search reads, and a label item, #label#, then the label, which feeds the suggestions under the search box. A label with aliases gets one index item per alias as well, so a search for an alias is the same single query. Then the important part for durable execution: the indexing step runs again, as it would on a retry, and writes the same keys, so the table still has five items. Every item is keyed by what it describes, which is what makes that step safe to retry and replay. Last, search: GET /query?index=sea is an API Gateway integration straight onto DynamoDB, a query for sort keys that begin with #index#sea. User 42, beach.jpg and the two labels are made up for the slide; the key layout is the one in internal/awsdrive/catalog.go.')
 
+ARCH_ICONS = 'var IC={' + ','.join(f"{k}:new Path2D('{aws_path(n)}')" for k, n in
+    (('l', 'aws-lambda'), ('s', 'aws-s3'), ('d', 'aws-dynamodb'), ('a', 'aws-api-gateway'), ('k', 'aws-rekognition'))) + '};\n'
+NEW['demo'] = mk('demo', 'Demo · Architecture', 'PrimeDrive, the Go Durable way',
+    xe(128, 264, 1664, 640, scene('arch', 1664, 640, 13, 0, ARCH_ICONS)) +
+    '<p style="position:absolute;left:128px;top:920px;width:1664px;font-size:24px;line-height:1.4;color:#3D4852">One durable function replaces the Step Functions state machine, its trigger function and the ASL definition.</p>\n',
+    'Show the video of the app first, then this slide. No clicks; the diagram plays once, about twelve seconds, in four beats. '
+    'One, upload: the browser asks the API for a presigned URL (the presigner function) and puts the file straight into S3. '
+    'Two, the pipeline: S3 invokes the durable function through its live alias, with no trigger function in between. It registers the upload, runs the Rekognition steps while a plain Lambda makes the thumbnail, and writes to DynamoDB. '
+    'Three, review: when the analysis gives a reason, the execution suspends. POST /reviews reaches the reviewer function, which reads the callback ID from the file record and calls SendDurableExecutionCallbackSuccess; the same execution resumes. '
+    'Four, search: GET /query, /files and /labels are API Gateway integrations straight onto DynamoDB, with no function at all. '
+    'Not drawn: Cognito signs users in and API Gateway checks the token on every route; thumbnails go to a second bucket. '
+    'Infrastructure facts if asked, from infra/lib/constructs/upload-pipeline.ts: durableConfig is the only difference from a regular function; execution timeout is the 24 hour review timeout plus one hour, retention 14 days, and one invocation is limited to one minute.')
+NEW['demo-handler'] = code_slide('demo-handler', 'One handler, top to bottom', '''
+func (p *Pipeline) Handle(ctx durable.Context, event events.S3Event,
+) (drive.File, error) {
+    upload, err := uploadFrom(event) // plain code: no step
+    // ...
+    err = p.save(ctx, "register-upload", file) // a step
+    // ...
+    settled, err := p.process(ctx, file) // analyze, review, publish
+
+    // Not every error is a failure: a suspension is passed on.
+    var failure *«durable.OperationError»
+    if errors.As(err, &failure) {
+        return drive.File{}, p.fail(ctx, file, err)
+    }
+
+    return settled, err
+}''',
+    [('Plain code needs no step', 'Reading the S3 event is deterministic: a replay gives the same answer.'),
+     ('Suspension is an error', 'When the function waits, the blocked operation returns a signal. Pass it on unchanged.'),
+     ('A failure has a type', 'SDK failures match *durable.OperationError. Only then is the upload marked FAILED.')],
+    'From internal/pipeline/pipeline.go. The lines marked with dots are the early returns on err, left out to fit. This is the whole workflow: the function is replayed from the top every time the execution resumes, and operations that already completed return their recorded result. The part that is specific to Go is the end: suspension travels through the error return, so the handler must not treat every error as a failure. It records FAILED only for errors that match durable.OperationError and returns everything else unchanged.')
+NEW['demo-parallel'] = code_slide('demo-parallel', 'Two things at once, safely', '''
+analysis := «durable.Go»(ctx, "analyze-image",
+    func(child durable.Context) (drive.Analysis, error) {
+        return p.analyze(child, upload)
+    })
+
+thumb := «durable.InvokeAsync»[thumbnail.Result](ctx, "generate-thumbnail",
+    p.cfg.ThumbnailerFunction, thumbnail.Request{Source: upload.Object})
+
+err := «durable.Join»(ctx, "await-analysis-and-thumbnail",
+    []durable.Awaitable{analysis, thumb})
+// ...
+found, err := analysis.Result(ctx)
+made, err := thumb.Result(ctx)''',
+    [('durable.Go replaces go', 'The body gets its own goroutine and a child context. Use child, never ctx.'),
+     ('InvokeAsync calls a Lambda', 'The call is checkpointed, so a replay never invokes the thumbnailer twice.'),
+     ('Join awaits both', 'Awaiting them together lets each branch reach a checkpoint before a suspension.')],
+    'From internal/pipeline/analysis.go; this was the Parallel state of the state machine. durable.Go is the replay-safe go statement from the concurrency slides. InvokeAsync is generic over the result type of the other function. Join awaits futures of different result types; after it both Result calls return at once. Inside analyze, detect-labels and detect-moderation are two steps with a retry strategy: four attempts, starting at two seconds, doubling, and no retry for an unsupported image.')
+NEW['demo-review'] = code_slide('demo-review', 'A day-long wait is one call', '''
+decision, err := «durable.WaitForCallback»[drive.Decision](
+    ctx, "human-review",
+    func(sc durable.StepContext, callbackID string) error {
+        return p.catalog.SaveFile(sc,
+            file.AwaitingReview(callbackID, reasons))
+    },
+    durable.WithCallbackTimeout(p.cfg.ReviewTimeout),
+    durable.WithCallbackSerdes(durable.JSONSerdes),
+)
+
+var timedOut *«durable.CallbackTimeoutError»
+if errors.As(err, &timedOut) {
+    return drive.Decision{Approved: false,
+        Note: "no reviewer responded in time"}, nil
+}
+return decision, err''',
+    [('The submitter runs once', 'It saves the callback ID on the file record. Then the execution suspends.'),
+     ('Nothing runs while waiting', 'POST /reviews sends the decision to that callback ID and the execution resumes here.'),
+     ('A timeout is a decision', 'errors.As matches CallbackTimeoutError and the upload is rejected.')],
+    'From internal/pipeline/review.go. Review only happens when the policy gives a reason: a moderation flag, or no label at 80 percent confidence; otherwise the upload is approved without waiting. The callback ID never leaves the backend: the reviewer function reads it from the caller\'s own file record and calls SendDurableExecutionCallbackSuccess with the decision as JSON. The review timeout is 24 hours by default. After this, an approved upload is indexed with durable.Map, one step per label, and a rejected one is removed with durable.Parallel.')
+
 # id -> (group, index, flags)
 ORDER = [('cover', None, 0, ''), ('why', None, 0, ''),
     ('first', 'how', 0, ''), ('replay', 'how', 1, ''), ('replay-live', 'how', 1, ''), ('determinism', 'how', 2, ''),
@@ -308,7 +401,8 @@ ORDER = [('cover', None, 0, ''), ('why', None, 0, ''),
     ('go-i-errors', 'go', 2, 'i'), ('go-errors', 'go', 2, ''), ('go-errors-2', 'go', 2, ''),
     ('go-i-tools', 'go', 3, 'i'), ('go-tooling', 'go', 3, ''), ('go-test', 'go', 3, ''),
     ('go-i-diff', 'go', 4, 'i'), ('go-gotchas', 'go', 4, ''),
-    ('demo', 'demo', 0, 'd'), ('demo-data', 'demo', 1, ''), ('wrap', None, 0, '')]
+    ('demo', 'demo', 0, ''), ('demo-handler', 'demo', 1, ''), ('demo-parallel', 'demo', 1, ''), ('demo-review', 'demo', 1, ''),
+    ('demo-data', 'demo', 1, 'h'), ('wrap', None, 0, '')]      # h: kept in the deck but skipped when presenting
 
 changed = []
 for n, (sid, group, idx, fl) in enumerate(ORDER):
@@ -330,6 +424,7 @@ for n, (sid, group, idx, fl) in enumerate(ORDER):
     pidx = None
     if group == 'go' and prv and prv[1] == 'go' and prv[2] != idx: pidx = prv[2]
     if sid in LOGOS: text = text.replace('<aside>', logo_svg(*LOGOS[sid]) + '<aside>', 1)
+    if 'h' in fl: text = text.replace(f'<section id="{sid}"', f'<section id="{sid}" hidden', 1)
     wr(sid, finish(text, group, idx, trans, dark=('d' in fl), intro=('i' in fl), teal=('t' in fl), prev=pidx))
     changed.append(sid)
 

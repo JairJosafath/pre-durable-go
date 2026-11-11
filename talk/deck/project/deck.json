@@ -44,6 +44,9 @@
     "go-i-diff",
     "go-gotchas",
     "demo",
+    "demo-handler",
+    "demo-parallel",
+    "demo-review",
     "demo-data",
     "wrap"
   ],
