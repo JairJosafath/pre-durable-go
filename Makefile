@@ -5,6 +5,8 @@ MODEL_DIR := local/models/resnet/1
 MODEL_URL := https://tfhub.dev/tensorflow/resnet_50/classification/1?tf-hub-format=compressed
 COMPOSE   := docker compose -f local/compose.yaml
 DURABLELINT := go tool -modfile=tools/go.mod durablelint
+LOCAL_API  := localhost:8080
+LOCAL_USER := alice
 
 .DEFAULT_GOAL := help
 
@@ -51,3 +53,14 @@ local-down: ## Stop the local stack and delete its data
 .PHONY: local-run
 local-run: ## Run the pipeline locally: make local-run IMAGE=~/Pictures/cat.jpg
 	go run ./cmd/local -image "$(IMAGE)"
+
+.PHONY: local-api
+local-api: ## Serve the REST API on localhost:8080, in place of API Gateway and Cognito
+	go run ./cmd/local -serve $(LOCAL_API)
+
+.PHONY: local-web
+local-web: frontend/node_modules ## Start the frontend against the local API, signed in as alice
+	cd frontend && NEXT_PUBLIC_ENDPOINT=http://$(LOCAL_API) NEXT_PUBLIC_LOCAL_USER=$(LOCAL_USER) npm run dev
+
+frontend/node_modules:
+	cd frontend && npm install

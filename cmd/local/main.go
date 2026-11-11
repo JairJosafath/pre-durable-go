@@ -6,11 +6,19 @@
 //	Amazon Rekognition   ->  ResNet-50 on TensorFlow Serving
 //	Lambda durable execution service  ->  the SDK's local runner
 //
-// The workflow code is exactly what runs in Lambda. Only this file, the
+// The workflow code is exactly what runs in Lambda. Only this package, the
 // composition root, differs from cmd/pipeline.
+//
+// It runs in one of two ways. With -image it uploads one file, runs the
+// workflow for it and asks for a review on the terminal:
 //
 //	make local-up
 //	go run ./cmd/local -image ~/Pictures/cat.jpg
+//
+// With -serve it stays up as the REST API the frontend talks to, in place of
+// API Gateway and Cognito (see server.go):
+//
+//	go run ./cmd/local -serve localhost:8080
 package main
 
 import (
@@ -51,6 +59,7 @@ const (
 
 type options struct {
 	image         string
+	serve         string
 	owner         string
 	s3URL         string
 	dynamoURL     string
@@ -60,7 +69,8 @@ type options struct {
 
 func main() {
 	opts := options{}
-	flag.StringVar(&opts.image, "image", "", "path of the JPEG or PNG to upload (required)")
+	flag.StringVar(&opts.image, "image", "", "path of a JPEG or PNG to upload and process once")
+	flag.StringVar(&opts.serve, "serve", "", "serve the REST API on this host:port instead, for example localhost:8080")
 	flag.StringVar(&opts.owner, "owner", "alice", "user who uploads the image")
 	flag.StringVar(&opts.s3URL, "s3", "http://localhost:8333", "SeaweedFS S3 endpoint")
 	flag.StringVar(&opts.dynamoURL, "dynamodb", "http://localhost:8000", "DynamoDB Local endpoint")
@@ -68,17 +78,23 @@ func main() {
 	flag.Float64Var(&opts.minConfidence, "min-confidence", defaultMinConfidence, "review uploads without a label this confident")
 	flag.Parse()
 
-	if opts.image == "" {
+	mode := run
+	if opts.serve != "" {
+		mode = serve
+	}
+
+	if opts.image == "" && opts.serve == "" {
 		flag.Usage()
 		os.Exit(2) //nolint:mnd // conventional exit code for a usage error
 	}
 
-	if err := run(context.Background(), opts); err != nil {
+	if err := mode(context.Background(), opts); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }
 
+// run uploads one image and runs the workflow for it.
 func run(ctx context.Context, opts options) error {
 	services := connect(opts)
 	if err := services.prepare(ctx); err != nil {
@@ -90,6 +106,18 @@ func run(ctx context.Context, opts options) error {
 		return err
 	}
 
+	result, err := execute(ctx, newRunner(services, opts), services.catalog, upload)
+	if err != nil {
+		return err
+	}
+
+	return report(result)
+}
+
+type runner = durabletest.LocalRunner[events.S3Event, drive.File]
+
+// newRunner returns a runner for one execution of the workflow.
+func newRunner(services *services, opts options) *runner {
 	// The same constructor as in cmd/pipeline, with different implementations.
 	workflow := pipeline.New(
 		imagenet.NewVision(services.objects, &http.Client{Timeout: visionTimeout}, opts.visionURL, visionModel),
@@ -105,19 +133,12 @@ func run(ctx context.Context, opts options) error {
 	// The local runner plays the part of the Lambda durable execution
 	// service: it keeps the checkpoints and re-invokes the handler.
 	logs := slog.NewTextHandler(os.Stderr, nil)
-	runner := durabletest.NewLocalRunner(workflow.Handle, durable.WithLogHandler(logs))
+	local := durabletest.NewLocalRunner(workflow.Handle, durable.WithLogHandler(logs))
 	generator := thumbnail.NewGenerator(services.objects, thumbnailBucket)
-	runner.RegisterFunction(thumbnailerName, durabletest.PlainFunction(generator.Generate))
+	local.RegisterFunction(thumbnailerName, durabletest.PlainFunction(generator.Generate))
 
-	result, err := execute(ctx, runner, services.catalog, upload)
-	if err != nil {
-		return err
-	}
-
-	return report(result)
+	return local
 }
-
-type runner = durabletest.LocalRunner[events.S3Event, drive.File]
 
 // execute runs the workflow to its end, asking for a review decision on the
 // terminal when the execution suspends to wait for one.

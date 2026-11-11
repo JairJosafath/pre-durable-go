@@ -120,6 +120,44 @@ make local-run IMAGE=~/Pictures/cat.jpg
 A photo of a beer glass or wine bottle is flagged as Alcohol and the
 execution suspends until you answer on the terminal.
 
+### With the frontend
+
+The same stack can serve the frontend. Start the API in one terminal and the
+frontend in another, then open http://localhost:3000:
+
+```bash
+make local-api
+```
+
+```bash
+make local-web
+```
+
+| AWS | Local stand-in |
+| --- | --- |
+| API Gateway | `cmd/local -serve`, the same routes on `localhost:8080` |
+| Presigner and reviewer functions | The same handlers from `internal/api`, called in-process |
+| Cognito | Nothing: you are signed in as `alice` |
+| S3 event that starts the workflow | The upload goes through the local API, which starts it |
+
+Nothing in the code that runs in AWS knows about local mode. The frontend
+reads two settings ([frontend/.env.example](frontend/.env.example)), which
+`make local-web` sets:
+
+| Setting | AWS | Local |
+| --- | --- | --- |
+| `NEXT_PUBLIC_ENDPOINT` | the `ApiUrl` stack output | `http://localhost:8080` |
+| `NEXT_PUBLIC_LOCAL_USER` | unset: users sign in | `alice`: no sign-in |
+
+With `NEXT_PUBLIC_LOCAL_USER` set, the frontend skips the sign-in form and
+sends the user's name as its token. The local API takes that name where AWS
+takes the `sub` claim of a verified Cognito token. A deployed API rejects
+such a token, so the setting cannot open a real drive.
+
+Suspended executions live in the memory of `make local-api`. Restart it and
+an upload that was waiting for a review can no longer be answered; upload it
+again.
+
 ```bash
 make local-down
 ```

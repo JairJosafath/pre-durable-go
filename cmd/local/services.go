@@ -27,12 +27,20 @@ type services struct {
 	catalog *awsdrive.Catalog
 }
 
+const localRegion = "us-east-1"
+
+// localCredentials are placeholders: the local containers accept any keys.
+func localCredentials() aws.Credentials {
+	return aws.Credentials{AccessKeyID: "local", SecretAccessKey: "local"}
+}
+
 // connect builds the AWS SDK clients, pointed at the local containers. The
 // credentials are placeholders: nothing here ever talks to AWS.
 func connect(opts options) *services {
+	keys := localCredentials()
 	local := aws.Config{
-		Region:      "us-east-1",
-		Credentials: credentials.NewStaticCredentialsProvider("local", "local", ""),
+		Region:      localRegion,
+		Credentials: credentials.NewStaticCredentialsProvider(keys.AccessKeyID, keys.SecretAccessKey, ""),
 	}
 
 	storage := s3.NewFromConfig(local, func(o *s3.Options) {
