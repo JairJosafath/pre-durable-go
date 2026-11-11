@@ -153,6 +153,7 @@ export default function useThumber(token, search) {
     thumbs: files.filter((file) => file.status === "READY").map(withUrl),
     pending: files.filter((file) => file.status === "PENDING_REVIEW" && !awaitingOutcome(file)).map(withUrl),
     processing: files.filter(inProgress),
+    failed: files.filter((file) => file.status === "FAILED"),
     expectOutcome,
     loading,
     hasMore: Boolean(next),

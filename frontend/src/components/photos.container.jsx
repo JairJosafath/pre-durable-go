@@ -3,7 +3,7 @@ import useThumber from "@/hooks/useThumber";
 import ReviewPanel from "@/components/review.panel";
 
 export default function PhotosContainer({ token, reload, setReload: setUploaded }) {
-  const { thumbs, pending, processing, expectOutcome, photo, setPhoto, setReload, hasMore, loadMore } = useThumber(token, "");
+  const { thumbs, pending, processing, failed, expectOutcome, photo, setPhoto, setReload, hasMore, loadMore } = useThumber(token, "");
 
   // A finished upload asks for a fresh listing.
   useEffect(() => {
@@ -28,6 +28,12 @@ export default function PhotosContainer({ token, reload, setReload: setUploaded 
       {processing.length > 0 && (
         <p className="mx-12 text-neutral-400">
           Processing {processing.map((file) => file.title).join(", ")}…
+        </p>
+      )}
+
+      {failed.length > 0 && (
+        <p className="mx-12 text-red-400">
+          Could not process {failed.map((file) => file.title).join(", ")}. Upload again to retry.
         </p>
       )}
 
