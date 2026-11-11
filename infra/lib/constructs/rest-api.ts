@@ -56,6 +56,13 @@ const methodResponses: MethodResponse[] = [
   { statusCode: '500', responseParameters: { 'method.response.header.Access-Control-Allow-Origin': true } },
 ];
 
+/** Items per page for catalog queries. */
+const PAGE_SIZE = 24;
+
+/** A query-string parameter as a value safe to embed in a mapping template. */
+const param = (name: string, transform = '') =>
+  `$util.escapeJavaScript($input.params('${name}')${transform}).replaceAll("\\'","")`;
+
 /** The signed-in user's Cognito subject, as a value safe to embed in a mapping template. */
 const SUB = `$util.escapeJavaScript($context.authorizer.claims.sub).replaceAll("\\'","")`;
 
@@ -65,6 +72,7 @@ const SUB = `$util.escapeJavaScript($context.authorizer.claims.sub).replaceAll("
  *   POST   /auth/{login,signup,confirm}   Cognito, called directly by API Gateway
  *   GET    /files                         the user's uploads (DynamoDB query)
  *   GET    /query?index=<label>           uploads by label (DynamoDB query)
+ *   GET    /labels?prefix=<text>          the user's labels, for suggestions (DynamoDB query)
  *   GET    /object/{key+}                 thumbnail of an upload (S3)
  *   DELETE /object/{key+}                 delete an upload (S3)
  *   GET    /presigned?action=&key=        presigned URL for an original (Lambda)
@@ -160,7 +168,11 @@ export class PrimeDriveApi extends Construct {
   private addCatalogRoutes(table: TableV2): void {
     table.grantReadData(this.serviceRole);
 
-    // Both routes query the user's partition; they differ in the sort-key prefix.
+    // Every route is one query on the user's partition; they differ only in
+    // the sort-key prefix. A page limit keeps the cost of a read flat however
+    // large a drive grows. The client asks for the next page with the sort
+    // key of the last item it received; the partition key always comes from
+    // the caller's token, so a page can never start in another user's data.
     const query = (sortKeyPrefix: string) =>
       new AwsIntegration({
         service: 'dynamodb',
@@ -169,26 +181,44 @@ export class PrimeDriveApi extends Construct {
         options: {
           credentialsRole: this.serviceRole,
           requestTemplates: {
-            'application/json': `{
+            'application/json': `#set($next = $input.params('next'))
+            {
               "TableName": "${table.tableName}",
+              "Limit": ${PAGE_SIZE},
               "KeyConditionExpression": "#pk = :pk AND begins_with(#sk, :sk)",
               "ExpressionAttributeNames": { "#pk": "pk", "#sk": "sk" },
               "ExpressionAttributeValues": {
                 ":pk": { "S": "user#${SUB}" },
                 ":sk": { "S": "${sortKeyPrefix}" }
               }
+              #if($next != "")
+              ,"ExclusiveStartKey": {
+                "pk": { "S": "user#${SUB}" },
+                "sk": { "S": "${param('next')}" }
+              }
+              #end
             }`,
           },
           integrationResponses,
         },
       });
 
-    this.api.root.addResource('files').addMethod('GET', query('#file#'), this.signedIn);
+    const paged = { 'method.request.querystring.next': false };
+    const lowercase = '.toLowerCase()';
 
-    const label = `$util.escapeJavaScript($input.params('index').toLowerCase()).replaceAll("\\'","")`;
-    this.api.root.addResource('query').addMethod('GET', query(`#index#${label}`), {
+    this.api.root.addResource('files').addMethod('GET', query('#file#'), {
       ...this.signedIn,
-      requestParameters: { 'method.request.querystring.index': true },
+      requestParameters: paged,
+    });
+
+    this.api.root.addResource('query').addMethod('GET', query(`#index#${param('index', lowercase)}`), {
+      ...this.signedIn,
+      requestParameters: { ...paged, 'method.request.querystring.index': true },
+    });
+
+    this.api.root.addResource('labels').addMethod('GET', query(`#label#${param('prefix', lowercase)}`), {
+      ...this.signedIn,
+      requestParameters: { ...paged, 'method.request.querystring.prefix': false },
     });
   }
 

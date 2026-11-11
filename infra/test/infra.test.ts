@@ -80,6 +80,19 @@ describe('api', () => {
     const open = methods.filter((m) => m.AuthorizationType === 'NONE' && m.HttpMethod !== 'OPTIONS');
 
     expect(open).toHaveLength(3); // login, signup, confirm
-    expect(methods.filter((m) => m.AuthorizationType === 'COGNITO_USER_POOLS')).toHaveLength(6);
+    expect(methods.filter((m) => m.AuthorizationType === 'COGNITO_USER_POOLS')).toHaveLength(7);
+  });
+
+  test('catalog queries are paged and stay inside the caller\'s partition', () => {
+    const templates = Object.values(template.findResources('AWS::ApiGateway::Method'))
+      .map((m) => JSON.stringify(m.Properties.Integration?.RequestTemplates ?? {}))
+      .filter((t) => t.includes('KeyConditionExpression'));
+
+    expect(templates).toHaveLength(3); // files, query, labels
+    for (const t of templates) {
+      expect(t).toContain('\\"Limit\\": 24');
+      expect(t).toContain('ExclusiveStartKey');
+      expect(t.match(/user#\$util\.escapeJavaScript\(\$context\.authorizer\.claims\.sub\)/g)).toHaveLength(2);
+    }
   });
 });
