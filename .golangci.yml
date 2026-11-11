@@ -1,0 +1,106 @@
+# golangci-lint v2 configuration.
+#
+# The goal is code that reads well on a slide: small functions, shallow
+# nesting, no clever tricks. Run with `make lint`.
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    # How hard is a function to understand?
+    - gocognit # cognitive complexity
+    - cyclop # cyclomatic complexity
+    - nestif # deeply nested ifs
+    - funlen # long functions
+    - maintidx # maintainability index
+    # Readability and idiom.
+    - revive
+    - gocritic
+    - misspell
+    - nakedret
+    - nlreturn
+    - whitespace
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - goconst
+    - mnd # magic numbers
+    - lll
+    - godot
+    - predeclared
+    - nolintlint
+    # Errors and contexts.
+    - errorlint
+    - errname
+    - wrapcheck
+    - contextcheck
+    - noctx
+    - bodyclose
+    # Design: accept interfaces, return structs; keep interfaces small.
+    - ireturn
+    - interfacebloat
+    - gochecknoglobals
+    - gochecknoinits
+    # Tests.
+    - paralleltest
+    - thelper
+    - tparallel
+  settings:
+    gocognit:
+      min-complexity: 10
+    cyclop:
+      max-complexity: 8
+    nestif:
+      min-complexity: 3
+    funlen:
+      lines: 50
+      statements: 30
+    lll:
+      line-length: 130
+    interfacebloat:
+      max: 4
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: var-naming
+        - name: early-return
+        - name: indent-error-flow
+        - name: unused-parameter
+        - name: context-as-argument
+        - name: error-return
+        - name: error-naming
+    wrapcheck:
+      # Errors from durable operations carry the suspension signal and typed
+      # failures; the SDK asks for them to be returned unchanged. The same
+      # goes for errors that cross the small interfaces of this module.
+      ignore-package-globs:
+        - github.com/aws/aws-durable-execution-sdk-go/*
+        - gdf/internal/*
+      ignore-interface-regexps:
+        - ^gdf/internal/
+  exclusions:
+    rules:
+      # A test tells a story top to bottom; length is not complexity there.
+      - path: _test\.go
+        linters: [funlen, maintidx, mnd, goconst, wrapcheck]
+      # The earlier experiments are kept as they were.
+      - path: ^(getting-started|simple-hello)/
+        linters: [revive, mnd, wrapcheck, godot, nlreturn]
+
+formatters:
+  enable:
+    - gofmt
+    - gci
+  settings:
+    gofmt:
+      simplify: true
+    gci:
+      # Imports in three groups: standard library, dependencies, this module.
+      sections:
+        - standard
+        - default
+        - localmodule
