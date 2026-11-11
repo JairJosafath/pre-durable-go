@@ -109,16 +109,26 @@ def logo_inner(name):
     t = re.sub(r'\s+id="[^"]*"', '', t)
     t = re.sub(r'>\s+<', '><', t).strip()
     return float(vb.group(1)), float(vb.group(2)), t
-def logo_svg(name, label, x, y, h):
+def mono_aws(name, col):
+    # AWS architecture icon reduced to its glyph in one colour: drop the coloured tile, tint the white mark and
+    # give it a hairline stroke so it carries the same weight as the deck's own icons.
     w0, h0, inner = logo_inner(name)
-    w = round(h * w0 / h0)
-    return (f'<svg id="logo-{name}" aria-label="{label}" style="position:absolute;left:{x}px;top:{y}px" width="{w}" height="{h}" '
-            f'viewBox="0 0 {w0:g} {h0:g}">{inner}</svg>\n')
-def gopher_g(cx, cy, h):
-    w0, h0, inner = logo_inner('gopher')
+    inner = re.sub(r'<g fill="#[0-9A-Fa-f]{6}"><rect[^>]*></rect></g>', '', inner)
+    assert 'fill="#FFFFFF"' in inner and '<rect' not in inner, name
+    return inner.replace('fill="#FFFFFF"', f'fill="{col}" stroke="{col}" stroke-width="1" stroke-linejoin="round"')
+def logo_svg(name, label, x, y, h, col='#006E8A'):
+    return (f'<svg id="logo-{name}" aria-label="{label}" style="position:absolute;left:{x}px;top:{y}px" width="{h}" height="{h}" '
+            f'viewBox="9 9 62 62">{mono_aws(name, col)}</svg>\n')
+def gopher_g(cx, cy, h, body, ink):
+    # Two-colour gopher: a flat silhouette in `body`, outline and features in `ink` (thickened a little so they
+    # survive at icon size).
+    w0, h0, t = logo_inner('gopher')
+    t = re.sub(r'<(path|ellipse)(?![^>]*fill=)', f'<\\1 fill="{ink}" stroke="{ink}" stroke-width="3"', t)
+    t = t.replace('fill="#231f20"', f'fill="{ink}"')
+    for c in ('#69d7e2', '#f6d2a2', '#fff'): t = t.replace(f'fill="{c}"', f'fill="{body}"')
     k = h / h0
-    return f'<g transform="translate({cx - w0 * k / 2:.1f} {cy - h / 2:.1f}) scale({k:.4f})">{inner}</g>'
-LOGOS = {'demo-data': ('aws-dynamodb', 'Amazon DynamoDB', 1712, 112, 80)}   # why.html (hand-written) carries aws-lambda at the same spot
+    return f'<g transform="translate({cx - w0 * k / 2:.1f} {cy - h / 2:.1f}) scale({k:.4f})">{t}</g>'
+LOGOS = {'demo-data': ('aws-dynamodb', 'Amazon DynamoDB', 1720, 112, 72)}   # why.html (hand-written) carries aws-lambda at the same spot
 # Arc states: [centre x, centre y, radius, icon radius, icon step, angle of first icon, glow angle, glow distance beyond the arc, glow radius]
 BIGR = [960, 1100, 1157, 1217, 5.2, -44, -37, 160, 520]
 def BIGL(k): return [960, 1100, 1157, 1217, 5.2, round(41 - 5.2 * k, 2), 37, 160, 520]
@@ -145,7 +155,7 @@ def arc_svg(s, foc, oc='#006E8A', show_icons=True, extra=''):
                   f'stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">{GLYPH[j].replace("@C@", col)}</g>')
     out += (f'</defs><path fill-rule="evenodd" fill="url(#ag)" d="M0 0 H1920 V540 H0 Z M{s[0] - s[2]} {s[1]} a{s[2]} {s[2]} 0 1 0 {2 * s[2]} 0 a{s[2]} {s[2]} 0 1 0 {-2 * s[2]} 0 Z"/>')
     return out + icons + extra + '</svg>\n'
-GOPHER = (1792, 124, 190)        # centre x, centre y, height of the gopher in the opener's arc
+GOPHER = (1800, 96, 112, '#F6F4EE', '#006E8A')   # centre x, centre y, height, body, ink of the gopher in the opener's arc
 def arc_nav(idx, prev, teal=False, intro=False):
     # Go section. Every slide carries a still SVG of the arc; topic cards also carry a canvas that paints over
     # it and animates: start state -> big arc on this topic -> ring and line -> shrink to the compact arc.
@@ -308,6 +318,10 @@ for n, (sid, group, idx, fl) in enumerate(ORDER):
             text = text.replace('<div style="display:flex;flex-direction:column;gap:12px">', '<div style="display:flex;flex-direction:column;gap:12px;padding:0px 0px 0px 48px">', 1)
     nxt = ORDER[n + 1] if n + 1 < len(ORDER) else None
     if nxt and nxt[1] == group and group != 'go':
+        trans = 'magic'
+    elif group == 'go' and 'i' in fl:
+        # During a fade the deck draws the leaving slide without its embeds, which would uncover the start-state
+        # arc under the canvas. With "magic" the arc SVG is matched by id and the next slide's arc shows at once.
         trans = 'magic'
     else:
         trans = 'fade'
