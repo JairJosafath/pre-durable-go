@@ -11,6 +11,7 @@ g.restore()}
 function wedge(s){var G=pos(s,s[6],s[2]+s[7]),q=g.createRadialGradient(G[0],G[1],0,G[0],G[1],s[8]);q.addColorStop(0,'rgba(0,173,216,.8)');q.addColorStop(.32,'rgba(0,173,216,.42)');q.addColorStop(.62,'rgba(0,173,216,.2)');q.addColorStop(1,'rgba(0,173,216,0)');g.fillStyle=q;g.beginPath();g.rect(0,0,BW,BH);g.arc(s[0],s[1],s[2],0,6.2832);g.fill('evenodd')}
 function spot(X,Y,al){if(!(al>0))return;var q=g.createRadialGradient(X,Y,0,X,Y,62);q.addColorStop(0,'rgba(0,173,216,.9)');q.addColorStop(.6,'rgba(0,173,216,.85)');q.addColorStop(1,'rgba(0,173,216,0)');g.globalAlpha=al;g.fillStyle=q;g.beginPath();g.arc(X,Y,62,0,6.2832);g.fill();g.globalAlpha=1}
 function draw(t){
+if(F0>=0){t=.3>t?t*1.5:.45+(t-.3)*2.2}
 var kA=eio(P(t,.45,1.5)),kC=eio(P(t,3,3.9)),s=st(st(S0,S1,kA),S2,kC),j,p,f;
 g.fillStyle='#F6F4EE';g.beginPath();g.rect(0,0,BW,BH);g.arc(960,1100,1157,0,6.2832);g.fill('evenodd');
 wedge(s);
