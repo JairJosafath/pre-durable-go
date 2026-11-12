@@ -33,7 +33,8 @@ func (p *Pipeline) publish(ctx durable.Context, file drive.File) (drive.File, er
 	return p.settle(ctx, "mark-ready", file.Settled(drive.StatusReady, ""))
 }
 
-// discard removes a rejected upload and everything derived from it.
+// discard rejects an upload and removes it, with the thumbnail if one was
+// made. REJECTED always means that the upload is gone.
 func (p *Pipeline) discard(ctx durable.Context, file drive.File, thumb drive.Object, note string) (drive.File, error) {
 	file.Thumbnail = ""
 
@@ -46,11 +47,13 @@ func (p *Pipeline) discard(ctx durable.Context, file drive.File, thumb drive.Obj
 		return drive.File{}, err
 	}
 
+	doomed := []durable.Branch[durable.Void]{{Name: "original", Func: p.remove(file.Object)}}
+	if thumb != (drive.Object{}) {
+		doomed = append(doomed, durable.Branch[durable.Void]{Name: "thumbnail", Func: p.remove(thumb)})
+	}
+
 	// Parallel runs named branches side by side and waits for all of them.
-	_, err = durable.Parallel(ctx, "discard-upload", []durable.Branch[durable.Void]{
-		{Name: "original", Func: p.remove(file.Object)},
-		{Name: "thumbnail", Func: p.remove(thumb)},
-	})
+	_, err = durable.Parallel(ctx, "discard-upload", doomed)
 	if err != nil {
 		return drive.File{}, err
 	}

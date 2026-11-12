@@ -134,7 +134,8 @@ func (p *Pipeline) process(ctx durable.Context, file drive.File) (drive.File, er
 	upload := file.Upload
 
 	if !upload.IsImage() {
-		return p.settle(ctx, "reject-unsupported", file.Settled(drive.StatusRejected, "not a supported image type"))
+		// Nothing was derived from the upload yet: there is no thumbnail.
+		return p.discard(ctx, file, drive.Object{}, "not a supported image type")
 	}
 
 	analysis, thumb, err := p.analyzeAndThumbnail(ctx, upload)

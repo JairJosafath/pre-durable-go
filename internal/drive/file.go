@@ -4,8 +4,14 @@ package drive
 type Status string
 
 // The statuses an upload moves through. PendingReview is skipped when the
-// analysis raises no concerns. Failed means the pipeline gave up: nobody
-// decided against the upload, it just could not be processed.
+// analysis raises no concerns.
+//
+// Rejected means the upload is gone. A reviewer decided against it, nobody
+// reviewed it in time, or it is not an image at all; in each case the
+// original is removed, with its thumbnail.
+//
+// Failed means the pipeline gave up: nobody decided against the upload, it
+// just could not be processed. The original is kept.
 const (
 	StatusProcessing    Status = "PROCESSING"
 	StatusPendingReview Status = "PENDING_REVIEW"
