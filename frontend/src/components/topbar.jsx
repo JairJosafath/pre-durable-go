@@ -1,8 +1,71 @@
-import { useRef } from "react";
-import { Logo, SearchIcon, UploadIcon, CloseIcon, CodeIcon } from "@/components/icons";
+import { useEffect, useRef, useState } from "react";
+import { Logo, SearchIcon, UploadIcon, CloseIcon, CodeIcon, SignOutIcon } from "@/components/icons";
+
+/** The user's initial. Where there is a session to end, it opens a menu to end it. */
+function Account({ username, onSignOut }) {
+  const [open, setOpen] = useState(false);
+  const menu = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const away = (event) => !menu.current?.contains(event.target) && setOpen(false);
+    const escape = (event) => event.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", away);
+    document.addEventListener("keydown", escape);
+
+    return () => {
+      document.removeEventListener("mousedown", away);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [open]);
+
+  const face = "flex h-10 w-10 items-center justify-center rounded-full border border-line bg-gradient-to-br from-raised to-hover text-sm font-semibold text-fg";
+  const initial = username?.[0]?.toUpperCase();
+
+  if (!onSignOut) {
+    return (
+      <span title={`Signed in as ${username}`} className={`hidden sm:flex ${face}`}>
+        {initial}
+      </span>
+    );
+  }
+
+  return (
+    <div ref={menu} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title={`Signed in as ${username}`}
+        className={`${face} transition hover:border-line-strong ${open ? "border-accent/60" : ""}`}
+        onClick={() => setOpen((shown) => !shown)}
+      >
+        {initial}
+      </button>
+
+      {open && (
+        <div role="menu" className="absolute right-0 top-12 z-40 w-56 animate-pop rounded-2xl border border-line bg-raised p-1.5 shadow-2xl shadow-black/60">
+          <p className="truncate px-3 pb-2 pt-1.5 text-sm text-muted">
+            Signed in as <span className="font-medium text-fg">{username}</span>
+          </p>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-hover"
+            onClick={onSignOut}
+          >
+            <SignOutIcon className="h-[18px] w-[18px] text-muted" />
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** The bar that stays on top: search in the middle, upload and dev mode on the right. */
-export default function TopBar({ username, search, setSearch, onUpload, dev, setDev, offline }) {
+export default function TopBar({ username, onSignOut, search, setSearch, onUpload, dev, setDev, offline }) {
   const picker = useRef(null);
   const box = useRef(null);
 
@@ -81,12 +144,7 @@ export default function TopBar({ username, search, setSearch, onUpload, dev, set
             }}
           />
 
-          <span
-            title={`Signed in as ${username}`}
-            className="hidden h-10 w-10 items-center justify-center rounded-full border border-line bg-gradient-to-br from-raised to-hover text-sm font-semibold text-fg sm:flex"
-          >
-            {username?.[0]?.toUpperCase()}
-          </span>
+          <Account username={username} onSignOut={onSignOut} />
         </div>
       </div>
     </header>

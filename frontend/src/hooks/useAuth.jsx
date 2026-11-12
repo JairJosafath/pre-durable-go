@@ -54,13 +54,17 @@ export default function useAuth() {
     return "";
   }, []);
 
-  /** Forgets a session the API no longer accepts, which brings the form back. */
-  const expire = useCallback(() => {
+  /**
+   * Forgets the session, which brings the form back. It is what the avatar's
+   * "Sign out" does, and what happens when the API no longer accepts the token.
+   */
+  const signOut = useCallback(() => {
     if (localAuth) return;
 
     localStorage.removeItem(STORAGE_KEY);
     setAuth(signedOut);
   }, []);
 
-  return { auth, checked, signIn, expire };
+  // Locally nobody signed in, so there is nothing to sign out of.
+  return { auth, checked, signIn, signOut, canSignOut: !localAuth };
 }

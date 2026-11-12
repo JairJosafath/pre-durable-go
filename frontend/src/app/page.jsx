@@ -25,18 +25,19 @@ const WAITING_MS = 6000;
 const MAX_WATCHED = 2;
 
 export default function Home() {
-  const { auth, checked, signIn, expire } = useAuth();
+  const { auth, checked, signIn, signOut, canSignOut } = useAuth();
 
   if (!checked) return null;
   if (!auth.authenticated) return <SignIn signIn={signIn} />;
 
-  return <Drive auth={auth} onExpired={expire} />;
+  return <Drive auth={auth} signOut={signOut} canSignOut={canSignOut} />;
 }
 
-function Drive({ auth, onExpired }) {
+function Drive({ auth, signOut, canSignOut }) {
   const token = auth.idToken;
   const { toasts, notify } = useToasts();
-  const drive = useDrive(token, { onExpired, notify });
+  // A token the API no longer accepts signs the user out.
+  const drive = useDrive(token, { onExpired: signOut, notify });
 
   const [search, setSearch] = useState("");
   const term = search.trim();
@@ -97,7 +98,16 @@ function Drive({ auth, onExpired }) {
 
   return (
     <>
-      <TopBar username={auth.username} search={search} setSearch={setSearch} onUpload={drive.upload} dev={dev} setDev={setDev} offline={drive.offline} />
+      <TopBar
+        username={auth.username}
+        onSignOut={canSignOut ? signOut : undefined}
+        search={search}
+        setSearch={setSearch}
+        onUpload={drive.upload}
+        dev={dev}
+        setDev={setDev}
+        offline={drive.offline}
+      />
 
       <main className={`px-5 pb-24 pt-8 transition-[padding] duration-300 sm:px-8 ${dev ? "pb-[62vh] lg:pb-24 lg:pr-[492px]" : ""}`}>
         {term ? (

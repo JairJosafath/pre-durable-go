@@ -87,6 +87,13 @@ export const PhotoIcon = (props) => (
   </Icon>
 );
 
+export const SignOutIcon = (props) => (
+  <Icon {...props}>
+    <path d="M14 4.5H7.5A2.5 2.5 0 0 0 5 7v10a2.5 2.5 0 0 0 2.5 2.5H14" />
+    <path d="M10.5 12H20m0 0-3.5-3.5M20 12l-3.5 3.5" />
+  </Icon>
+);
+
 export const PinIcon = (props) => (
   <Icon {...props}>
     <path d="M9 4h6l-1 6 3 3H7l3-3-1-6ZM12 13v7" />
