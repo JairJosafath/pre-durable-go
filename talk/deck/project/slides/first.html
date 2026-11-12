@@ -1,0 +1,53 @@
+<section id="first" data-transition="magic" style="background:#F6F4EE;color:#101820;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 112px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">How it works</p>
+<h2 style="font-size:64px;font-weight:600;line-height:1.1">A first durable function</h2>
+</div>
+<x-embed style="position:absolute;left:128px;top:264px;width:1664px;height:664px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
+<canvas id="c"></canvas>
+<script>
+(function(){
+var c=document.getElementById('c'),g=c.getContext('2d'),BW=1664,BH=664,END=6;
+var F=parseFloat((location.hash.match(/t=([\d.]+)/)||[])[1]);
+function fit(){var d=Math.min(window.devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;g.setTransform(c.width/BW,0,0,c.height/BH,0,0)}
+function cl(v){return Math.max(0,Math.min(1,v))}
+function P(t,a,b){return cl((t-a)/(b-a))}
+function eo(k){return 1-Math.pow(1-k,3)}
+var CY='#5DC9E2',OR='#F2A65A',TX='#E6EDF3',MU='#8B9BAA',BG='#101820',LN='#2A3A4A';
+var SA='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',MO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+var L=['func handler(ctx durable.Context, _ any) (Response, error) {','    msg, err := durable.Step(ctx, "step-1",','        func(sc durable.StepContext) (string, error) {','            return "Hello from Durable Lambda!", nil','        })','    if err != nil {','        return Response{}, err','    }','    if err := durable.Wait(ctx, "wait-10s", 10*time.Second); err != nil {','        return Response{}, err','    }','    ctx.Logger().Info("Resumed after wait")','    return Response{StatusCode: 200, Body: msg}, nil','}'];
+var RX=/(durable\.Step|durable\.Wait|ctx\.Logger\(\)|"[^"]*")/,SEG=[],i;
+var BL=[0,8,11,14],BT=[0,0,0],bi=0;
+for(i=0;L.length>i;i++){if(i===BL[bi+1])bi++;SEG.push(L[i].split(RX));BT[bi]+=L[i].length}
+var CO=[[1,2.1,'Step',['Runs the body, checkpoints the','result, retries on error.']],[8,3,'Wait',['Checkpoints a timer and ends','the invocation.']],[11,3.9,'Logger',['Replay-aware: written once,','though the handler runs twice.']]];
+function txt(s,X,Y,f,col,al,alg){if(!(al>0))return;g.globalAlpha=al;g.font=f;g.fillStyle=col;g.textAlign=alg||'left';g.textBaseline='middle';g.fillText(s,X,Y);g.globalAlpha=1}
+function draw(t){
+var fade=P(t,0,.4),k0=P(t,.4,1.7),b=0,j,k,used=0;
+g.clearRect(0,0,BW,BH);g.fillStyle=BG;g.fillRect(0,0,BW,BH);
+g.font='500 24px '+MO;var cw=g.measureText('m').width;
+for(k=0;3>k;k++){var hl=P(t,CO[k][1],CO[k][1]+.4);if(hl>0){g.globalAlpha=.16*hl*fade;g.fillStyle=CY;g.fillRect(32,62+CO[k][0]*40-19,(L[CO[k][0]].length*cw+32)*eo(hl),38);g.globalAlpha=1}}
+for(i=0;L.length>i;i++){if(i===BL[b+1]){b++;used=0}var y=62+i*40,left=Math.floor(k0*BT[b])-used,pos=0;
+if(left>0){for(j=0;SEG[i].length>j;j++){var s=SEG[i][j],vis=Math.max(0,Math.min(s.length,left-pos));
+if(vis>0){txt(s.slice(0,vis),48+pos*cw,y,'500 24px '+MO,j%2?(s.charAt(0)==='"'?OR:CY):TX,fade)}pos+=s.length}
+if(1>k0){if(L[i].length>=left){g.globalAlpha=fade;g.fillStyle=CY;g.fillRect(50+left*cw,y-15,13,30);g.globalAlpha=1}}}
+used+=L[i].length}
+for(k=0;3>k;k++){var C=CO[k],a=P(t,C[1],C[1]+.5),yy=62+C[0]*40,x0=48+L[C[0]].length*cw+18;
+if(a>0){g.globalAlpha=fade;g.setLineDash([6,8]);g.beginPath();g.moveTo(x0,yy);g.lineTo(x0+(1176-x0)*eo(a),yy);g.strokeStyle=CY;g.lineWidth=3;g.stroke();g.setLineDash([]);g.globalAlpha=1;
+var b=P(t,C[1]+.35,C[1]+.75),dx=(1-eo(b))*24;
+if(b>0){g.globalAlpha=b*fade;g.beginPath();g.arc(1184,yy,7,0,6.2832);g.fillStyle=CY;g.fill();g.globalAlpha=1}
+txt(C[2],1206+dx,yy,'600 32px '+SA,CY,b*fade);txt(C[3][0],1206+dx,yy+42,'500 24px '+SA,TX,b*fade);txt(C[3][1],1206+dx,yy+76,'500 24px '+SA,TX,b*fade)}}
+}
+var T0=-1,LT=0;
+function fr(n){if(0>T0)T0=n;if(n-LT>900)T0=n;LT=n;draw(Math.min((n-T0)/1000,END));requestAnimationFrame(fr)}
+if(window.IntersectionObserver){new IntersectionObserver(function(e){if(e[0].isIntersecting)T0=-1}).observe(c)}
+function go(){fit();if(!isNaN(F))draw(F)}
+go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
+})();
+</script>
+</x-embed>
+<div id="nav-strip" style="position:absolute;left:1816px;top:0px;width:104px;height:1080px;background:linear-gradient(to bottom, rgba(236,232,221,0) 0%, rgba(236,232,221,1) 34%, rgba(236,232,221,1) 66%, rgba(236,232,221,0) 100%)"></div>
+<x-icon id="nav-how-0" name="Code" style="position:absolute;left:1832px;top:504px;width:72px;height:72px;color:#006E8A;opacity:1"></x-icon>
+<x-icon id="nav-how-1" name="Play" style="position:absolute;left:1832px;top:616px;width:72px;height:72px;color:#006E8A;opacity:0.3"></x-icon>
+<x-icon id="nav-how-2" name="CheckCircle" style="position:absolute;left:1832px;top:728px;width:72px;height:72px;color:#006E8A;opacity:0.13"></x-icon>
+<aside>1:30 to 2:30. No clicks. Style: live code. The three parts of the function type themselves at the same time, in a little over a second, then three callouts draw out from the lines they describe, just under a second apart. The whole thing settles in about five seconds. This is the getting-started function from the repo, trimmed. Say: a durable handler is an ordinary Go function with a durable.Context. Callout 1, Step: durable.Step takes the context, a name, and a function; its return value is what gets checkpointed. Callout 2, Wait: durable.Wait suspends for ten seconds, and the invocation actually ends here. Callout 3, Logger: the handler body runs from the top a second time after the wait, but the logger suppresses records it already emitted. main is just durable.Start(handler). The next slide runs this exact function.</aside>
+</section>

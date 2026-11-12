@@ -1,0 +1,26 @@
+
+  PrimeDrive is running on your machine, without AWS.
+  This is a stand-in to try the workflow with. It is not a copy of the cloud:
+
+  Labels      A small open classifier (ResNet-50, ImageNet) replaces Amazon
+              Rekognition. It knows 1,000 object classes and guesses which
+              of them the whole photo is, so labels are often odd or plain
+              wrong, and it cannot pick out several things in one picture.
+              Do NOT expect the labels you get in AWS.
+  Review      There is no moderation model. A photo is flagged only when the
+              classifier sees beer, wine, a cocktail shaker or a gun. A photo
+              it is less than 40% sure about goes to review too, so more
+              photos wait for you here than they would in AWS.
+  Sign-in     None. You are signed in as "alice"; there is no Cognito, and
+              the API believes whatever name the browser sends.
+  Durability  Executions live in the memory of the local API. Stop it and an
+              upload that was waiting for a review can no longer be answered;
+              upload it again.
+  Dev mode    An execution's operations appear when it suspends or ends,
+              all at once. In AWS they appear one by one, as they happen.
+  Data        The catalog is kept in memory by DynamoDB Local.
+              `make local-down` deletes it, with every uploaded photo.
+  Not here    S3 events and their at-least-once delivery, the dead-letter
+              queue, IAM permissions, API Gateway, and Lambda's limits and
+              timeouts. Code that works here can still fail on those in AWS.
+

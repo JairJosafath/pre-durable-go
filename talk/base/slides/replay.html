@@ -1,0 +1,47 @@
+<section id="replay" hidden data-transition="push" style="background:#F6F4EE;color:#101820;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 112px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">How it works</p>
+<h2 style="font-size:64px;font-weight:600;line-height:1.1">Checkpoint and replay</h2>
+</div>
+<div data-build-in="fade 1" style="position:absolute;left:128px;top:300px;width:260px;display:flex;flex-direction:column;gap:4px">
+<p style="font-size:30px;font-weight:600;line-height:1.2">Invocation 1</p>
+<p style="font-size:24px;line-height:1.4;color:#3D4852">t = 0 s</p>
+</div>
+<div data-build-in="rise 1" style="position:absolute;left:404px;top:264px;width:414px;display:flex;flex-direction:column;gap:8px;background:#FFFDF8;border:2px solid #006E8A;border-radius:16px;padding:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;line-height:1.2">step-1</p>
+<p style="font-size:24px;line-height:1.4;color:#3D4852">Runs: the body executes and its result is checkpointed</p>
+</div>
+<x-shape kind="arrow-right" data-build-in="fade 2" style="position:absolute;left:834px;top:336px;width:40px;height:20px;background:#006E8A"></x-shape>
+<div data-build-in="rise 2" style="position:absolute;left:890px;top:264px;width:414px;display:flex;flex-direction:column;gap:8px;background:#FFFDF8;border:2px solid #006E8A;border-radius:16px;padding:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;line-height:1.2">wait-10s</p>
+<p style="font-size:24px;line-height:1.4;color:#3D4852">Runs: the timer is checkpointed<br>and the handler stops here</p>
+</div>
+<x-shape kind="arrow-right" data-build-in="fade 3" style="position:absolute;left:1320px;top:336px;width:40px;height:20px;background:#006E8A"></x-shape>
+<div data-build-in="rise 3" style="position:absolute;left:1376px;top:264px;width:414px;display:flex;flex-direction:column;gap:8px;background:#FFFDF8;border:2px solid #006E8A;border-radius:16px;padding:24px">
+<p style="font-size:30px;font-weight:600;line-height:1.2">Invocation ends</p>
+<p style="font-size:24px;line-height:1.4;color:#3D4852">The execution stays open,<br>with nothing running</p>
+</div>
+<div data-build-in="fade 4" style="position:absolute;left:128px;top:456px;width:1664px;display:flex;justify-content:center;border:2px dashed #8A8F94;border-radius:16px;padding:20px">
+<p style="font-size:30px;line-height:1.4;color:#3D4852">Suspended for 10 seconds: no invocation, no compute</p>
+</div>
+<div data-build-in="fade 5" style="position:absolute;left:128px;top:598px;width:260px;display:flex;flex-direction:column;gap:4px">
+<p style="font-size:30px;font-weight:600;line-height:1.2">Invocation 2</p>
+<p style="font-size:24px;line-height:1.4;color:#3D4852">t = 10 s</p>
+</div>
+<div data-build-in="rise 5" style="position:absolute;left:404px;top:562px;width:414px;display:flex;flex-direction:column;gap:8px;background:#ECE8DD;border:2px dashed #8A8F94;border-radius:16px;padding:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;line-height:1.2">step-1</p>
+<p style="font-size:24px;line-height:1.4;color:#3D4852">Replayed: stored result returned, body not run</p>
+</div>
+<x-shape kind="arrow-right" data-build-in="fade 5" style="position:absolute;left:834px;top:634px;width:40px;height:20px;background:#8A8F94"></x-shape>
+<div data-build-in="rise 5" style="position:absolute;left:890px;top:562px;width:414px;display:flex;flex-direction:column;gap:8px;background:#ECE8DD;border:2px dashed #8A8F94;border-radius:16px;padding:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:30px;font-weight:600;line-height:1.2">wait-10s</p>
+<p style="font-size:24px;line-height:1.4;color:#3D4852">Replayed: the timer has<br>already elapsed</p>
+</div>
+<x-shape kind="arrow-right" data-build-in="fade 6" style="position:absolute;left:1320px;top:634px;width:40px;height:20px;background:#006E8A"></x-shape>
+<div data-build-in="pop 6" style="position:absolute;left:1376px;top:562px;width:414px;display:flex;flex-direction:column;gap:8px;background:#FFFDF8;border:2px solid #006E8A;border-radius:16px;padding:24px">
+<p style="font-size:30px;font-weight:600;line-height:1.2">Handler returns</p>
+<p style="font-size:24px;line-height:1.4;color:#3D4852">Runs: new code, then the execution succeeds</p>
+</div>
+<p style="position:absolute;left:128px;top:768px;width:1664px;font-size:24px;line-height:1.4;color:#3D4852">For each operation the SDK looks for a checkpoint and returns it. With none, it runs the operation, serializes the result, persists it, and continues.</p>
+<aside>2:30 to 3:45. Six clicks; the slide starts with only the title and the bottom line. Click 1: first invocation, step-1 runs for real and its result is persisted through the Lambda checkpoint API. Click 2: the wait is checkpointed. Click 3: the SDK ends the invocation; the execution is still open. Click 4: for ten seconds nothing is running and nothing is billed for compute. Click 5: the service invokes the function again, from the top. This is replay, and both cards arrive together on purpose because replay is near-instant: step-1 does not run its body, it returns the stored result; the wait is already satisfied. Click 6: the code after the wait runs for the first time and the handler returns. Once a checkpoint is persisted that result is safe: if the function is interrupted, replay resumes from the last persisted checkpoint. The same mechanism handles crashes, timeouts, retries and callbacks.</aside>
+</section>

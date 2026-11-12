@@ -1,0 +1,66 @@
+<section id="determinism" data-transition="push" style="background:#F6F4EE;color:#101820;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 112px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">How it works</p>
+<h2 style="font-size:64px;font-weight:600;line-height:1.1">Determinism</h2>
+</div>
+<x-embed style="position:absolute;left:128px;top:264px;width:1664px;height:312px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
+<canvas id="c"></canvas>
+<script>
+(function(){
+var c=document.getElementById('c'),g=c.getContext('2d'),BW=1664,BH=312,END=7.1;
+var F=parseFloat((location.hash.match(/t=([\d.]+)/)||[])[1]);
+function fit(){var d=Math.min(window.devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;g.setTransform(c.width/BW,0,0,c.height/BH,0,0)}
+function cl(v){return Math.max(0,Math.min(1,v))}
+function P(t,a,b){return cl((t-a)/(b-a))}
+function mix(a,b,k){return a+(b-a)*k}
+function eio(k){return k>.5?1-Math.pow(-2*k+2,3)/2:4*k*k*k}
+function bk(k){var s=1.70158;return 1+(s+1)*Math.pow(k-1,3)+s*Math.pow(k-1,2)}
+function win(t,a,b){return Math.min(P(t,a,a+.3),1-P(t,b-.3,b))}
+var CY='#5DC9E2',OR='#F2A65A',PK='#FF7A9A',TX='#E6EDF3',MU='#8B9BAA',BG='#101820',LN='#2A3A4A';
+var SA='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',MO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+var KT=[['Same ','operations.',.4],['Same ','order.',1.2],['Every ','invocation.',2]],OP=['step-1','wait','step-2'],SX=[1070,1270,1470];
+function txt(s,X,Y,f,col,al,alg){if(!(al>0))return;g.globalAlpha=al;g.font=f;g.fillStyle=col;g.textAlign=alg||'left';g.textBaseline='middle';g.fillText(s,X,Y);g.globalAlpha=1}
+function rr(X,Y,w,h,r){g.beginPath();g.moveTo(X+r,Y);g.arcTo(X+w,Y,X+w,Y+h,r);g.arcTo(X+w,Y+h,X,Y+h,r);g.arcTo(X,Y+h,X,Y,r);g.arcTo(X,Y,X+w,Y,r);g.closePath()}
+function tok(s,X,Y,col,al,sc){if(!(al>0))return;g.globalAlpha=al;rr(X-80*sc,Y-28*sc,160*sc,56*sc,12);g.fillStyle='#16222E';g.fill();g.strokeStyle=col;g.lineWidth=3;g.stroke();g.globalAlpha=1;txt(s,X,Y+1,'500 24px '+MO,TX,al,'center')}
+function draw(t){
+var fade=P(t,0,.4),i,sw=eio(P(t,4.2,5)),bad=P(t,4.9,5.2),lc=bad>.5?PK:OR;
+g.clearRect(0,0,BW,BH);g.fillStyle=BG;g.fillRect(0,0,BW,BH);
+for(i=0;3>i;i++){var K=KT[i],a=P(t,K[2],K[2]+.45),y=84+i*72+(1-bk(a))*46;g.font='600 54px '+SA;var w=g.measureText(K[0]).width;txt(K[0],48,y,'600 54px '+SA,TX,a*fade);txt(K[1],48+w,y,'600 54px '+SA,CY,a*fade)}
+g.globalAlpha=fade*P(t,.4,.8);g.beginPath();g.moveTo(800,40);g.lineTo(800,272);g.strokeStyle=LN;g.lineWidth=2;g.stroke();g.globalAlpha=1;
+txt('first run',848,92,'600 24px '+SA,MU,fade*P(t,.4,.8));txt('replay',848,204,'600 24px '+SA,MU,fade*P(t,1.8,2.2));
+for(i=0;3>i;i++){var a1=P(t,.6+i*.3,.95+i*.3);tok(OP[i],SX[i],92,CY,a1*fade,bk(a1));
+var a2=P(t,2+i*.3,2.4+i*.3),rx=SX[i];if(i===0)rx=mix(SX[0],SX[2],sw);if(i===2)rx=mix(SX[2],SX[0],sw);
+var ry=204-(1-bk(a2))*40-(i===1?0:Math.sin(sw*3.1416)*(i===0?26:-26)),sh=bad>0?Math.sin(t*46)*4*(1-P(t,4.9,5.6)):0;
+if(a2>0){g.globalAlpha=fade*a2*(i===1?1:1-.0*sw);g.beginPath();g.moveTo(SX[i],120);g.lineTo(rx,ry-28);g.strokeStyle=i===1?OR:lc;g.lineWidth=3;g.stroke();g.globalAlpha=1}
+tok(OP[i],rx+sh,ry,i===1?OR:lc,a2*fade,1)}
+var CAP=[[2.2,4.1,'Same order: every result lines up.',OR],[5,99,'Different order: results go to the wrong operation.',PK]];
+for(i=0;2>i;i++){txt(CAP[i][2],848,276,'600 26px '+SA,CAP[i][3],fade*win(t,CAP[i][0],CAP[i][1]))}
+}
+var T0=-1,LT=0;
+function fr(n){if(0>T0)T0=n;if(n-LT>900)T0=n;LT=n;draw(Math.min((n-T0)/1000,END));requestAnimationFrame(fr)}
+if(window.IntersectionObserver){new IntersectionObserver(function(e){if(e[0].isIntersecting)T0=-1}).observe(c)}
+function go(){fit();if(!isNaN(F))draw(F)}
+go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
+})();
+</script>
+</x-embed>
+<div data-build-in="rise 1" style="position:absolute;left:128px;top:604px;width:820px;height:340px;display:flex;flex-direction:column;gap:14px;background:#FFFDF8;border:1px solid #DDD8CC;border-radius:16px;padding:36px 40px">
+<h3 style="font-size:30px;font-weight:600;line-height:1.2;color:#006E8A">Goes inside a step</h3>
+<ul style="font-size:26px;line-height:1.4">
+<li>The clock: time.Now()</li>
+<li>Random values and UUIDs</li>
+<li>API calls and database queries</li>
+<li>File system access</li>
+</ul>
+<p style="font-size:24px;line-height:1.4;color:#3D4852">Only the recorded result takes part in replay.</p>
+</div>
+<div data-build-in="rise 2" style="position:absolute;left:972px;top:604px;width:820px;height:340px;display:flex;flex-direction:column;gap:14px;background:#FFFDF8;border:1px solid #DDD8CC;border-radius:16px;padding:36px 40px">
+<h3 style="font-size:30px;font-weight:600;line-height:1.2;color:#006E8A">Code between operations</h3>
+<ul style="font-size:26px;line-height:1.4">
+<li>Depends only on the event and on recorded results</li>
+<li>Never ranges over a Go map to create operations: sort the keys first</li>
+<li>Passes data through return values, not captured variables</li>
+</ul>
+</div>
+<aside>3:45 to 4:30. Style: kinetic type, then a matching diagram. The dark panel plays once, about seven seconds, with both halves running together: on the left three lines land one after another (same operations, same order, every invocation) while on the right three operations appear for the first run and then three for the replay, linked one to one. The left finishes first; about two seconds later two replay operations swap places and the links turn pink: that is a non-deterministic handler. Then two clicks, one per card. This is the one rule everything else follows from. Because the handler re-runs from the top, the sequence of durable operations has to come out identical each time; the SDK validates operation names and types against the checkpoint log during replay. Click 1: anything that can differ between runs belongs in a step body, where only the recorded result matters. Click 2: two Go-flavoured traps. Map iteration order is randomized, so a loop over a map that creates operations will not replay; and a step that mutates a captured variable loses that mutation on replay, because the body does not run again.</aside>
+</section>

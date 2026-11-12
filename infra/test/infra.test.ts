@@ -1,0 +1,136 @@
+import * as cdk from 'aws-cdk-lib/core';
+import { Match, Template } from 'aws-cdk-lib/assertions';
+import { PrimeDriveStack } from '../lib/prime-drive-stack';
+
+// Skip compiling the Go binaries: these tests only look at the template.
+const app = new cdk.App({ context: { 'aws:cdk:bundling-stacks': [] } });
+const template = Template.fromStack(new PrimeDriveStack(app, 'TestStack'));
+
+const durableFunction = { DurableConfig: Match.anyValue() };
+
+describe('upload pipeline', () => {
+  test('exactly one function is durable, and it can wait a day for a reviewer', () => {
+    template.resourcePropertiesCountIs('AWS::Lambda::Function', durableFunction, 1);
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      DurableConfig: { ExecutionTimeout: 25 * 60 * 60, RetentionPeriodInDays: 14 },
+      Runtime: 'provided.al2023',
+      Handler: 'bootstrap',
+      Architectures: ['arm64'],
+    });
+  });
+
+  test('the durable function gets the durable execution policy', () => {
+    template.hasResourceProperties('AWS::IAM::Role', {
+      ManagedPolicyArns: Match.arrayWith([
+        Match.objectLike({
+          'Fn::Join': Match.arrayWith([
+            Match.arrayWith([':iam::aws:policy/service-role/AWSLambdaBasicDurableExecutionRolePolicy']),
+          ]),
+        }),
+      ]),
+    });
+  });
+
+  test('S3 starts executions through the live alias, without a trigger function', () => {
+    template.hasResourceProperties('AWS::Lambda::Alias', { Name: 'live' });
+    template.hasResourceProperties('Custom::S3BucketNotifications', {
+      NotificationConfiguration: {
+        LambdaFunctionConfigurations: [
+          Match.objectLike({
+            Events: ['s3:ObjectCreated:*'],
+            Filter: { Key: { FilterRules: [{ Name: 'prefix', Value: 'users/' }] } },
+            LambdaFunctionArn: { Ref: Match.stringLikeRegexp('UploadPipelineLive') },
+          }),
+        ],
+      },
+    });
+  });
+
+  test('events of executions that did not succeed go to a dead-letter queue', () => {
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      ...durableFunction,
+      DeadLetterConfig: { TargetArn: { 'Fn::GetAtt': [Match.stringLikeRegexp('UploadPipelineFailedUploads'), 'Arn'] } },
+    });
+    template.hasResourceProperties('AWS::SQS::Queue', { MessageRetentionPeriod: 14 * 24 * 60 * 60 });
+  });
+
+  test('there is no state machine left', () => {
+    template.resourceCountIs('AWS::StepFunctions::StateMachine', 0);
+  });
+
+  test('the workflow knows which function to invoke for thumbnails', () => {
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      ...durableFunction,
+      Environment: {
+        Variables: Match.objectLike({
+          THUMBNAILER_FUNCTION: { Ref: Match.stringLikeRegexp('UploadPipelineThumbnailerCurrentVersion') },
+          REVIEW_TIMEOUT: '86400s',
+        }),
+      },
+    });
+  });
+});
+
+describe('api', () => {
+  test('only the reviewer may complete review callbacks', () => {
+    const statement = Match.objectLike({
+      Action: ['lambda:SendDurableExecutionCallbackSuccess', 'lambda:SendDurableExecutionCallbackFailure'],
+    });
+    template.resourcePropertiesCountIs(
+      'AWS::IAM::Policy',
+      { PolicyDocument: { Statement: Match.arrayWith([statement]) } },
+      1,
+    );
+  });
+
+  test('every route except auth and CORS preflight requires a signed-in user', () => {
+    const methods = Object.values(template.findResources('AWS::ApiGateway::Method')).map((m) => m.Properties);
+    const open = methods.filter((m) => m.AuthorizationType === 'NONE' && m.HttpMethod !== 'OPTIONS');
+
+    expect(open).toHaveLength(3); // login, signup, confirm
+    expect(methods.filter((m) => m.AuthorizationType === 'COGNITO_USER_POOLS')).toHaveLength(8);
+  });
+
+  test('execution histories are read by one function, which can do nothing else with executions', () => {
+    const statement = Match.objectLike({ Action: 'lambda:GetDurableExecutionHistory', Effect: 'Allow' });
+    template.resourcePropertiesCountIs(
+      'AWS::IAM::Policy',
+      { PolicyDocument: { Statement: Match.arrayWith([statement]) } },
+      1,
+    );
+
+    const policies = Object.values(template.findResources('AWS::IAM::Policy'))
+      .map((policy) => JSON.stringify(policy.Properties.PolicyDocument))
+      .filter((document) => document.includes('lambda:GetDurableExecutionHistory'));
+
+    expect(policies).toHaveLength(1);
+    expect(policies[0]).not.toContain('SendDurableExecutionCallback');
+    expect(policies[0]).not.toContain('lambda:InvokeFunction');
+  });
+
+  test('GET /executions needs a signed-in user and the name of a file', () => {
+    const resources = template.findResources('AWS::ApiGateway::Resource', { Properties: { PathPart: 'executions' } });
+    const [resourceId] = Object.keys(resources);
+    expect(resourceId).toBeDefined();
+
+    template.hasResourceProperties('AWS::ApiGateway::Method', {
+      HttpMethod: 'GET',
+      ResourceId: { Ref: resourceId },
+      AuthorizationType: 'COGNITO_USER_POOLS',
+      RequestParameters: { 'method.request.querystring.key': true },
+    });
+  });
+
+  test('catalog queries are paged and stay inside the caller\'s partition', () => {
+    const templates = Object.values(template.findResources('AWS::ApiGateway::Method'))
+      .map((m) => JSON.stringify(m.Properties.Integration?.RequestTemplates ?? {}))
+      .filter((t) => t.includes('KeyConditionExpression'));
+
+    expect(templates).toHaveLength(3); // files, query, labels
+    for (const t of templates) {
+      expect(t).toContain('\\"Limit\\": 24');
+      expect(t).toContain('ExclusiveStartKey');
+      expect(t.match(/user#\$util\.escapeJavaScript\(\$context\.authorizer\.claims\.sub\)/g)).toHaveLength(2);
+    }
+  });
+});
