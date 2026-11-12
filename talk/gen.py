@@ -239,7 +239,7 @@ NEW['go-i-shape'] = intro_go('go-i-shape', 'Go · 1 of 5', 'API shape', 'Operati
 NEW['go-i-conc'] = intro_go('go-i-conc', 'Go · 2 of 5', 'Concurrency', 'Why a durable context belongs to one goroutine.', 'Topic card, two seconds. Say: this is the most Go-specific part of the talk.')
 NEW['go-i-errors'] = intro_go('go-i-errors', 'Go · 3 of 5', 'Errors', 'Errors are values, and one of them is a signal.', 'Topic card, two seconds.')
 NEW['go-i-tools'] = intro_go('go-i-tools', 'Go · 4 of 5', 'Tooling', 'A linter that knows the rules, and a local test runner.', 'Topic card, two seconds.')
-NEW['go-i-diff'] = intro_go('go-i-diff', 'Go · 5 of 5', 'Surprises', 'Three things that catch you out.', 'Topic card, two seconds.')
+NEW['go-i-diff'] = intro_go('go-i-diff', 'Go · 5 of 5', 'Surprises', 'Sometimes it doesn\'t <b><span style="color:#00ADD8">GO</span></b> as you think it should.', 'Topic card, two seconds.')
 
 NEW['errors'] = mk('errors', 'The SDK · Error handling', 'Where an error happens decides what happens',
     xe(128, 264, 1664, 560, scene('instep', 1664, 560, 10.5)) +
