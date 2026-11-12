@@ -4,6 +4,7 @@ import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Alias, IFunction } from 'aws-cdk-lib/aws-lambda';
 import { Bucket, EventType } from 'aws-cdk-lib/aws-s3';
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 import { goLambda } from './go-function';
 import { USER_PREFIX } from './storage';
@@ -25,6 +26,8 @@ export class UploadPipeline extends Construct {
   /** Alias that S3 invokes and that callbacks are sent to. */
   readonly workflow: Alias;
   readonly thumbnailer: IFunction;
+  /** Holds the S3 event of every execution that did not succeed. */
+  readonly failedUploads: Queue;
 
   constructor(scope: Construct, id: string, props: UploadPipelineProps) {
     super(scope, id);
@@ -42,6 +45,15 @@ export class UploadPipeline extends Construct {
     props.uploads.grantRead(thumbnailer);
     props.thumbnails.grantPut(thumbnailer);
 
+    // S3 invokes the workflow asynchronously, and Lambda does not retry a
+    // durable execution that ends as FAILED, STOPPED or TIMED_OUT. It sends
+    // the event that started it here instead, so that no upload is lost
+    // without a trace and the event can be sent again.
+    this.failedUploads = new Queue(this, 'FailedUploads', {
+      retentionPeriod: Duration.days(14),
+      enforceSSL: true,
+    });
+
     // durableConfig is the only infrastructure difference between a durable
     // function and a regular one. CDK swaps the basic execution policy for
     // AWSLambdaBasicDurableExecutionRolePolicy, which lets the function
@@ -55,6 +67,7 @@ export class UploadPipeline extends Construct {
         executionTimeout: reviewTimeout.plus(Duration.hours(1)),
         retentionPeriod: Duration.days(14),
       },
+      deadLetterQueue: this.failedUploads,
       environment: {
         TABLE_NAME: props.table.tableName,
         THUMBNAILER_FUNCTION: thumbnailer.currentVersion.functionArn,

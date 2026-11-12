@@ -46,6 +46,14 @@ describe('upload pipeline', () => {
     });
   });
 
+  test('events of executions that did not succeed go to a dead-letter queue', () => {
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      ...durableFunction,
+      DeadLetterConfig: { TargetArn: { 'Fn::GetAtt': [Match.stringLikeRegexp('UploadPipelineFailedUploads'), 'Arn'] } },
+    });
+    template.hasResourceProperties('AWS::SQS::Queue', { MessageRetentionPeriod: 14 * 24 * 60 * 60 });
+  });
+
   test('there is no state machine left', () => {
     template.resourceCountIs('AWS::StepFunctions::StateMachine', 0);
   });

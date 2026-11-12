@@ -39,6 +39,10 @@ export class PrimeDriveStack extends Stack {
     new CfnOutput(this, 'ApiUrl', { value: api.api.url, description: 'NEXT_PUBLIC_ENDPOINT for the frontend' });
     new CfnOutput(this, 'UploadBucket', { value: storage.uploads.bucketName });
     new CfnOutput(this, 'TableName', { value: catalog.table.tableName });
+    new CfnOutput(this, 'FailedUploadsQueue', {
+      value: pipeline.failedUploads.queueUrl,
+      description: 'Dead-letter queue with the S3 events of executions that did not succeed',
+    });
     new CfnOutput(this, 'WorkflowFunction', {
       value: pipeline.workflow.functionArn,
       description: 'Qualified ARN of the durable function, for the cloud test runner',
