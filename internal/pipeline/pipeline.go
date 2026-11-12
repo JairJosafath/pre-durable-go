@@ -115,8 +115,7 @@ func (p *Pipeline) Handle(ctx durable.Context, event events.S3Event) (drive.File
 	// delay or a reviewer, the operation it is blocked on returns a signal
 	// that must be passed on unchanged. A failure is an error of one of the
 	// SDK's public types, and all of those match OperationError.
-	var failure *durable.OperationError
-	if errors.As(err, &failure) {
+	if _, ok := errors.AsType[*durable.OperationError](err); ok {
 		err = p.fail(ctx, file, err)
 	}
 
