@@ -293,12 +293,13 @@ started it is kept for 14 days in the queue named by the `FailedUploadsQueue`
 stack output.
 
 A later deploy can seem to hang at the end. Every deploy publishes a new
-version of the durable function and deletes the old one, and Lambda does not
-delete a version while an execution on it still waits, for a review for
-instance. The new code is live as soon as the stack says
-`UPDATE_COMPLETE_CLEANUP_IN_PROGRESS`; CloudFormation then keeps retrying
-the delete, about ten minutes per attempt when this was seen. Answering the
-open reviews first avoids the wait.
+version of the durable function and deletes the old one. The new code is
+live as soon as the stack says `UPDATE_COMPLETE_CLEANUP_IN_PROGRESS`; what
+follows is only that delete. Once it failed twice with "Exceeded attempts to
+wait" and went through on the third try, 27 minutes later. Two executions on
+the old version were still waiting for a review at the time, which may be
+why. `make empty-all` stops open executions, should you want none around
+before a deploy.
 
 ### A user, some photos, and the web page
 
