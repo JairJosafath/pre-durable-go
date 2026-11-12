@@ -389,9 +389,13 @@ def arch_base():
               f'<path fill="{line}" d="M{x2 + ux * 13:g} {y2 + uy * 13:g} L{x2 - ux * 3 - uy * 8:g} {y2 - uy * 3 + ux * 8:g} L{x2 - ux * 3 + uy * 8:g} {y2 - uy * 3 - ux * 8:g} Z"/>')
     o += f'<circle cx="96" cy="304" r="14" fill="{ink}"/><path fill="{ink}" d="M70 350 a26 24 0 0 1 52 0 Z"/>'
     for x, y, s, icon, _, _ in ARCH_N.values():
-        col = re.search(r'fill="(#[0-9A-Fa-f]{6})"', rd(f'{LG}/{icon}.svg')).group(1)
+        src = rd(f'{LG}/{icon}.svg')
+        col = re.search(r'fill="(#[0-9A-Fa-f]{6})"', src).group(1)
+        # some marks sit in a group that is shifted inside the 80 px tile (S3 is); keep that shift
+        tr = re.search(r'transform="translate\(([-\d.]+),\s*([-\d.]+)\)"', src)
+        shift = f' transform="translate({float(tr.group(1)):.1f} {float(tr.group(2)):.1f})"' if tr else ''
         o += (f'<g transform="translate({x - s / 2:g} {y - s / 2:g}) scale({s / 80:g})"><rect width="80" height="80" fill="{col}"/>'
-              f'<path fill="#FFFFFF" fill-rule="evenodd" d="{aws_path(icon)}"/></g>')
+              f'<path fill="#FFFFFF" fill-rule="evenodd"{shift} d="{aws_path(icon)}"/></g>')
     o += '</svg>\n'
     lab = "position:absolute;width:320px;text-align:center;font-size:24px;line-height:1.25;color:#101820"
     o += f'<p id="arch-l-cloud" style="position:absolute;left:{AX + 252}px;top:{AY + 21}px;width:240px;font-size:24px;font-weight:600;line-height:1.25;color:#232F3E">AWS Cloud</p>\n'
