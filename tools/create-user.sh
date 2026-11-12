@@ -1,54 +1,84 @@
 #!/usr/bin/env bash
-# Creates a PrimeDrive user through the deployed API: signs up, confirms with
-# the code Cognito emails, then logs in once to check the account works.
+# Creates a PrimeDrive user in the deployed stack and prints a password to
+# sign in with. Nothing is emailed and there is no code to confirm.
 #
-#   tools/create-user.sh <username> <email>
+#   tools/create-user.sh <username> [email]        or: make user NAME=<username>
 #
-# The API URL is read from the PrimeDriveStack outputs in $AWS_REGION
-# (default eu-west-1); set PRIMEDRIVE_API to use another deployment.
-# The password must have at least 8 characters with an upper-case letter,
-# a lower-case letter, a digit and a symbol.
+# The password is generated here. Run the script again for the same user to
+# get a new one.
+#
+# The script needs AWS credentials that may administer the stack's Cognito
+# user pool; the credentials that deployed the stack can. Without those, a
+# user signs up through POST /auth/signup and POST /auth/confirm, with a code
+# sent to their email.
 set -euo pipefail
 
-if [ $# -ne 2 ]; then
-  echo "usage: $0 <username> <email>" >&2
+. "$(dirname "$0")/lib.sh"
+need aws curl python3
+
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+  echo "usage: $0 <username> [email]" >&2
   exit 2
 fi
 
 username=$1
-email=$2
-region=${AWS_REGION:-eu-west-1}
+email=${2:-$username@example.com}
 
-api=${PRIMEDRIVE_API:-$(aws cloudformation describe-stacks --region "$region" --stack-name PrimeDriveStack \
-  --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text)}
-api=${api%/}
+# Four groups joined by underscores: long enough, easy to read out, and one
+# double-click selects all of it. It has the upper-case letter, lower-case
+# letter, digit and symbol the user pool asks for. Look-alike characters
+# (0 O, 1 l I) are left out.
+generate_password() {
+  python3 -c '
+import secrets
+
+letters = "abcdefghijkmnpqrstuvwxyz"
+alphabet = letters + letters.upper().replace("I", "").replace("O", "") + "23456789"
+
+while True:
+    groups = ["".join(secrets.choice(alphabet) for _ in range(4)) for _ in range(4)]
+    password = "_".join(groups)
+    if any(c.islower() for c in password) and any(c.isupper() for c in password) and any(c.isdigit() for c in password):
+        print(password)
+        break
+'
+}
 
 # json key value [key value ...] prints a JSON object, with every value quoted safely.
 json() {
   python3 -c 'import json, sys; print(json.dumps(dict(zip(sys.argv[1::2], sys.argv[2::2]))))' "$@"
 }
 
-# post <path> <json body> prints the response body and fails on an HTTP error.
-post() {
-  local out status
-  out=$(curl -sS -X POST "$api$1" -H 'Content-Type: application/json' -d "$2" -w '\n%{http_code}')
-  status=${out##*$'\n'}
-  out=${out%$'\n'*}
-  if [ "$status" -ge 300 ]; then
-    echo "POST $1 failed with HTTP $status: $out" >&2
-    return 1
-  fi
-  printf '%s\n' "$out"
-}
+pool=$(stack_resource AWS::Cognito::UserPool)
+api=$(stack_output ApiUrl)
+password=$(generate_password)
 
-read -rsp "Password for $username: " password
-echo
+if aws cognito-idp admin-get-user --user-pool-id "$pool" --username "$username" >/dev/null 2>&1; then
+  echo "User $username already exists: giving it a new password."
+else
+  # The same attributes POST /auth/signup sets, with the email already verified.
+  aws cognito-idp admin-create-user --user-pool-id "$pool" --username "$username" \
+    --message-action SUPPRESS \
+    --user-attributes "Name=email,Value=$email" Name=email_verified,Value=true Name=custom:subscription,Value=free \
+    >/dev/null
+fi
 
-echo "Signing up $username at $api ..."
-post /auth/signup "$(json username "$username" password "$password" email "$email")" >/dev/null
+# A permanent password: the user is not asked to change it at the first sign-in.
+aws cognito-idp admin-set-user-password --user-pool-id "$pool" --username "$username" \
+  --password "$password" --permanent
 
-read -rp "Verification code sent to $email: " code
-post /auth/confirm "$(json username "$username" code "$code")" >/dev/null
+# Sign in once the way the frontend does, to know the account really works.
+status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "${api%/}/auth/login" \
+  -H 'Content-Type: application/json' -d "$(json username "$username" password "$password")")
+[ "$status" = 200 ] || die "the user was created, but signing in through ${api%/}/auth/login answered HTTP $status"
 
-post /auth/login "$(json username "$username" password "$password")" | grep -q AuthenticationResult
-echo "User $username is confirmed and can log in."
+cat <<EOF
+
+User $username can sign in.
+
+  Username  $username
+  Password  $password
+
+Start the frontend with \`make web\` and sign in at http://localhost:3000.
+Give the drive some photos with: make seed NAME=$username
+EOF
