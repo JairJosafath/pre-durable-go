@@ -1,5 +1,5 @@
 // Command thumbnailer is the Lambda function that makes thumbnails. It is an
-// ordinary function; the pipeline calls it with durable.Invoke.
+// ordinary function; the pipeline calls it with durable.InvokeAsync.
 package main
 
 import (

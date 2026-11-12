@@ -10,6 +10,7 @@ off, and indexes it so it can be found by what is in it.
 ```
 browser ──presigned PUT──▶ S3 uploads ──ObjectCreated──▶ durable function (alias "live")
                                                            │
+   name-run                   step                         │
    register-upload            step                         │
    analyze-image              durable.Go ─┐                │
      detect-labels            step        ├─ durable.Join  │
@@ -17,10 +18,22 @@ browser ──presigned PUT──▶ S3 uploads ──ObjectCreated──▶ dur
    generate-thumbnail         InvokeAsync ┘  ──▶ thumbnailer function
    human-review               WaitForCallback  ◀── POST /reviews (reviewer function)
    index-labels               Map              ──▶ DynamoDB
-   discard-upload             Parallel         ──▶ S3 deletes (rejected uploads)
    mark-ready / mark-rejected step
+   discard-upload             Parallel         ──▶ S3 deletes (rejected uploads)
    mark-failed                step             (when any stage above gives up)
 ```
+
+An upload ends in one of three statuses. `READY` is published and indexed.
+`REJECTED` is gone: a reviewer turned it down, nobody reviewed it in time, or
+it is not an image, and the original and its thumbnail are deleted. `FAILED`
+could not be processed, and the original is kept.
+
+S3 delivers events at least once, and a user can upload the same key again
+while the first execution still waits for a reviewer. So every execution names
+its run (`name-run`) and writes the name into the file record. The record
+belongs to the run that registered last, and every later write is conditional
+on still owning it. An execution that was overtaken changes and deletes
+nothing; it ends with the result `SUPERSEDED`.
 
 ## Layout
 
@@ -51,7 +64,9 @@ From the [Go SDK guide](https://docs.aws.amazon.com/durable-execution/sdk-refere
 | Futures and combinators (`InvokeAsync`, `Join`) | [analysis.go `analyzeAndThumbnail`](internal/pipeline/analysis.go) |
 | Invoking another function | [analysis.go](internal/pipeline/analysis.go), [cmd/thumbnailer](cmd/thumbnailer/main.go) |
 | Callbacks (`WaitForCallback`) | [review.go](internal/pipeline/review.go), [awsdrive/callbacks.go](internal/awsdrive/callbacks.go) |
-| Typed errors | [review.go](internal/pipeline/review.go) (`CallbackTimeoutError`) |
+| Typed errors | [review.go](internal/pipeline/review.go) (`CallbackTimeoutError`), [pipeline.go `Handle`](internal/pipeline/pipeline.go) (`OperationError`) |
+| A business outcome as a step result, not an error | [pipeline.go `save`](internal/pipeline/pipeline.go) |
+| Nondeterminism inside a step | [pipeline.go `register`](internal/pipeline/pipeline.go) (the run's random name) |
 | `Map` and `Parallel` | [outcome.go](internal/pipeline/outcome.go) |
 | Replay-aware logging | `ctx.Logger()` in [pipeline.go](internal/pipeline/pipeline.go), `sc.Logger()` in [analysis.go](internal/pipeline/analysis.go) |
 | Static analysis with durablelint | `make lint`, pinned in [tools/go.mod](tools/go.mod) |
@@ -90,8 +105,9 @@ make test-workflow
 `test-workflow` prints the operation tree of every execution. The tests run
 the real handler on the SDK's local runner, with in-memory fakes behind the
 workflow's interfaces. They cover publishing, retries on a virtual clock, a
-non-retryable failure, an upload that ends as `FAILED`, and a review that is
-approved, rejected, or never answered.
+non-retryable failure, an upload that ends as `FAILED`, a review that is
+approved, rejected, or never answered, and an upload that is replaced while
+its first execution is still running.
 
 ```bash
 make lint
@@ -171,6 +187,10 @@ Lambda durable functions and Amazon Rekognition.
 ```bash
 cd infra && npm install && npx cdk deploy
 ```
+
+Lambda does not retry a durable execution that fails. The S3 event that
+started it is kept for 14 days in the queue named by the `FailedUploadsQueue`
+stack output.
 
 Then start the frontend with the `ApiUrl` stack output:
 

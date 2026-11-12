@@ -42,8 +42,13 @@ type reviewRequest struct {
 }
 
 // Handle passes the caller's decision to the durable execution that is
-// suspended on this upload. The callback ID never leaves the backend: it is
-// read from the caller's own catalog record.
+// suspended on this upload. The request names a file, never a callback ID:
+// the ID is read from the caller's own catalog record, so a caller can only
+// answer the reviews of their own uploads.
+//
+// The ID is no secret from its owner, who can see it in GET /files. It is of
+// no use outside the backend: completing a callback takes the IAM permission
+// that only this function has.
 func (r *Reviewer) Handle(
 	ctx context.Context, request events.APIGatewayProxyRequest,
 ) (events.APIGatewayProxyResponse, error) {

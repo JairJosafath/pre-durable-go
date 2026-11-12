@@ -65,7 +65,7 @@ func (h *harness) newRunner(t *testing.T) *durabletest.LocalRunner[events.S3Even
 	runner := durabletest.NewLocalRunner(h.workflow.Handle, durable.WithLogHandler(logs))
 
 	// In the cloud the thumbnailer is a second Lambda function. Here the same
-	// code is registered under the same name, so durable.Invoke really runs it.
+	// code is registered under the same name, so durable.InvokeAsync really runs it.
 	generator := thumbnail.NewGenerator(h.objects, thumbnailBucket)
 	runner.RegisterFunction(thumbnailerName, durabletest.PlainFunction(generator.Generate))
 

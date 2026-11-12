@@ -22,9 +22,7 @@ func handler(ctx durable.Context, _ any) (Response, error) {
 
 	// Pause for 10 seconds without consuming compute or incurring usage charges.
 	if err := durable.Wait(ctx, "wait-10s", 10*time.Second); err != nil {
-		return Response{
-			Body: "after 10 seconds",
-		}, err
+		return Response{}, err
 	}
 
 	// Replay-aware: this logs once even though the function replays after the wait.

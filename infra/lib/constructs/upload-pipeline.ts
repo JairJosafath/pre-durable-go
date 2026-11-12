@@ -34,7 +34,7 @@ export class UploadPipeline extends Construct {
 
     const reviewTimeout = props.reviewTimeout ?? Duration.hours(24);
 
-    // A plain Lambda function. The workflow calls it with durable.Invoke, so
+    // A plain Lambda function. The workflow calls it with durable.InvokeAsync, so
     // the call is checkpointed like any other durable operation.
     const thumbnailer = goLambda(this, 'Thumbnailer', 'thumbnailer', {
       description: 'Resizes an uploaded image into a thumbnail',
