@@ -2,6 +2,12 @@
   {
     "type": "STEP",
     "subType": "Step",
+    "name": "name-run",
+    "status": "SUCCEEDED"
+  },
+  {
+    "type": "STEP",
+    "subType": "Step",
     "name": "register-upload",
     "status": "SUCCEEDED"
   },

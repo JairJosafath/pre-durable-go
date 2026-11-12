@@ -35,8 +35,19 @@ func (p *Pipeline) publish(ctx durable.Context, file drive.File) (drive.File, er
 
 // discard removes a rejected upload and everything derived from it.
 func (p *Pipeline) discard(ctx durable.Context, file drive.File, thumb drive.Object, note string) (drive.File, error) {
+	file.Thumbnail = ""
+
+	// The record goes first, because writing it is also the check that this
+	// run still owns the upload. When a newer upload has taken the key over,
+	// the write is refused and nothing is deleted: the objects are no longer
+	// this run's to remove.
+	rejected, err := p.settle(ctx, "mark-rejected", file.Settled(drive.StatusRejected, note))
+	if err != nil {
+		return drive.File{}, err
+	}
+
 	// Parallel runs named branches side by side and waits for all of them.
-	_, err := durable.Parallel(ctx, "discard-upload", []durable.Branch[durable.Void]{
+	_, err = durable.Parallel(ctx, "discard-upload", []durable.Branch[durable.Void]{
 		{Name: "original", Func: p.remove(file.Object)},
 		{Name: "thumbnail", Func: p.remove(thumb)},
 	})
@@ -44,9 +55,7 @@ func (p *Pipeline) discard(ctx durable.Context, file drive.File, thumb drive.Obj
 		return drive.File{}, err
 	}
 
-	file.Thumbnail = ""
-
-	return p.settle(ctx, "mark-rejected", file.Settled(drive.StatusRejected, note))
+	return rejected, nil
 }
 
 // remove returns a branch that deletes one object.

@@ -2,6 +2,7 @@ package awsdrive
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -61,10 +62,38 @@ type indexItem struct {
 	Confidence float64 `json:"confidence"`
 }
 
-// SaveFile writes the whole record. A second write with the same record
-// changes nothing, so the call is safe to retry.
+// RegisterFile writes the record of a new upload, replacing the record of
+// any earlier upload of the same key. From then on the record belongs to
+// file.Run.
+func (c *Catalog) RegisterFile(ctx context.Context, file drive.File) error {
+	return c.put(ctx, itemOf(file))
+}
+
+// SaveFile writes the whole record, on the condition that file.Run still
+// owns it. When a newer upload has been registered in the meantime it writes
+// nothing and returns drive.ErrSuperseded.
+//
+// A second write with the same record changes nothing, so the call is safe
+// to retry.
 func (c *Catalog) SaveFile(ctx context.Context, file drive.File) error {
-	return c.put(ctx, fileItem{File: file, PK: userKey(file.Owner), SK: fileKey(file.Key)})
+	err := c.put(ctx, itemOf(file), func(input *dynamodb.PutItemInput) {
+		input.ConditionExpression = aws.String("#run = :run")
+		input.ExpressionAttributeNames = map[string]string{"#run": "run"}
+		input.ExpressionAttributeValues = map[string]types.AttributeValue{
+			":run": &types.AttributeValueMemberS{Value: file.Run},
+		}
+	})
+
+	var takenOver *types.ConditionalCheckFailedException
+	if errors.As(err, &takenOver) {
+		return fmt.Errorf("%w: %s", drive.ErrSuperseded, file.Key)
+	}
+
+	return err
+}
+
+func itemOf(file drive.File) fileItem {
+	return fileItem{File: file, PK: userKey(file.Owner), SK: fileKey(file.Key)}
 }
 
 // IndexLabel makes the upload findable by the label's name and by each of
@@ -121,13 +150,19 @@ func (c *Catalog) File(ctx context.Context, owner, key string) (drive.File, erro
 	return item.File, nil
 }
 
-func (c *Catalog) put(ctx context.Context, item any) error {
+// put writes one item. The conditions, if any, narrow down when it may.
+func (c *Catalog) put(ctx context.Context, item any, conditions ...func(*dynamodb.PutItemInput)) error {
 	attributes, err := attributevalue.MarshalMapWithOptions(item, useJSONTagsToEncode)
 	if err != nil {
 		return fmt.Errorf("encode catalog item: %w", err)
 	}
 
-	_, err = c.client.PutItem(ctx, &dynamodb.PutItemInput{TableName: aws.String(c.table), Item: attributes})
+	input := &dynamodb.PutItemInput{TableName: aws.String(c.table), Item: attributes}
+	for _, condition := range conditions {
+		condition(input)
+	}
+
+	_, err = c.client.PutItem(ctx, input)
 	if err != nil {
 		return fmt.Errorf("put catalog item: %w", err)
 	}

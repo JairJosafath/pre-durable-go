@@ -29,6 +29,9 @@ type Vision struct {
 	Flags  []drive.Label
 	// Err, when set, fails every call.
 	Err error
+	// OnDetect, when set, runs at the start of every label detection. A test
+	// uses it to make something happen while the pipeline is analysing.
+	OnDetect func()
 
 	mu          sync.Mutex
 	failuresDue int
@@ -57,6 +60,10 @@ func (v *Vision) DetectLabels(context.Context, drive.Object) ([]drive.Label, err
 	defer v.mu.Unlock()
 
 	v.calls++
+
+	if v.OnDetect != nil {
+		v.OnDetect()
+	}
 
 	if v.failuresDue > 0 {
 		v.failuresDue--
@@ -89,10 +96,26 @@ func NewCatalog() *Catalog {
 	}
 }
 
-// SaveFile stores the record, replacing any earlier one for the same key.
+// RegisterFile stores the record of a new upload, replacing any earlier one
+// for the same key. The record then belongs to file.Run.
+func (c *Catalog) RegisterFile(_ context.Context, file drive.File) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.files[file.Key] = file
+
+	return nil
+}
+
+// SaveFile replaces the record while file.Run still owns it, like the real
+// catalog. After a newer upload was registered it returns drive.ErrSuperseded.
 func (c *Catalog) SaveFile(_ context.Context, file drive.File) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if c.files[file.Key].Run != file.Run {
+		return fmt.Errorf("%w: %s", drive.ErrSuperseded, file.Key)
+	}
 
 	c.files[file.Key] = file
 

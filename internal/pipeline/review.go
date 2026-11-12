@@ -21,12 +21,17 @@ func (p *Pipeline) review(ctx durable.Context, file drive.File, reasons []string
 	// publish it, and then suspends the execution. No Lambda is running while
 	// the reviewer makes up their mind. When the reviewer's decision is sent
 	// to that callback ID, the execution resumes right here with the decision.
+	//
+	// The submitter is a step too. If a newer upload has taken the record
+	// over, it fails without a retry: nobody would ever see this callback ID,
+	// so there is no point in waiting for an answer.
 	decision, err := durable.WaitForCallback[drive.Decision](ctx, "human-review",
 		func(sc durable.StepContext, callbackID string) error {
 			return p.catalog.SaveFile(sc, file.AwaitingReview(callbackID, reasons))
 		},
 		durable.WithCallbackTimeout(p.cfg.ReviewTimeout),
 		durable.WithCallbackSerdes(durable.JSONSerdes),
+		durable.WithSubmitterRetry(retryTransient()),
 	)
 
 	// Durable operations fail with typed errors. A review nobody answered is

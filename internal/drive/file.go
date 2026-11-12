@@ -14,6 +14,11 @@ const (
 	StatusFailed        Status = "FAILED"
 )
 
+// StatusSuperseded is how a pipeline run ends when a newer upload of the same
+// key took the file over. It is only ever the result of a run, never stored:
+// the catalog record belongs to the newer run.
+const StatusSuperseded Status = "SUPERSEDED"
+
 // Label is something recognised in an image, with a confidence from 0 to 100.
 type Label struct {
 	Name       string  `json:"name"`
@@ -33,6 +38,11 @@ func (l Label) SearchTerms() []string {
 // File is the catalog record of an upload.
 type File struct {
 	Upload
+
+	// Run names the pipeline run that owns the record. Uploading the same key
+	// again starts a new run, which takes the record over; the older run can
+	// then no longer change it.
+	Run string `json:"run,omitempty"`
 
 	Status    Status  `json:"status"`
 	Labels    []Label `json:"labels,omitempty"`

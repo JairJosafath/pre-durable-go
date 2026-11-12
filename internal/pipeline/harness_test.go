@@ -26,10 +26,11 @@ const (
 // that executes it. This is dependency injection doing its job: the workflow
 // under test is the production code, only its collaborators are swapped.
 type harness struct {
-	vision  *drivetest.Vision
-	catalog *drivetest.Catalog
-	objects *drivetest.Objects
-	runner  *durabletest.LocalRunner[events.S3Event, drive.File]
+	vision   *drivetest.Vision
+	catalog  *drivetest.Catalog
+	objects  *drivetest.Objects
+	workflow *pipeline.Pipeline
+	runner   *durabletest.LocalRunner[events.S3Event, drive.File]
 }
 
 func newHarness(t *testing.T, vision *drivetest.Vision) *harness {
@@ -45,17 +46,38 @@ func newHarness(t *testing.T, vision *drivetest.Vision) *harness {
 		ReviewPolicy:        drive.ReviewPolicy{MinConfidence: 80},
 	})
 
+	h := &harness{vision: vision, catalog: catalog, objects: objects, workflow: workflow}
+	h.runner = h.newRunner(t)
+
+	return h
+}
+
+// newRunner returns a runner for one execution of the workflow.
+func (h *harness) newRunner(t *testing.T) *durabletest.LocalRunner[events.S3Event, drive.File] {
+	t.Helper()
+
 	// The runner takes the same options as durable.Start. Here the workflow's
 	// log lines go to the test log instead of stderr.
 	logs := slog.NewTextHandler(t.Output(), nil)
-	runner := durabletest.NewLocalRunner(workflow.Handle, durable.WithLogHandler(logs))
+	runner := durabletest.NewLocalRunner(h.workflow.Handle, durable.WithLogHandler(logs))
 
 	// In the cloud the thumbnailer is a second Lambda function. Here the same
 	// code is registered under the same name, so durable.Invoke really runs it.
-	generator := thumbnail.NewGenerator(objects, thumbnailBucket)
+	generator := thumbnail.NewGenerator(h.objects, thumbnailBucket)
 	runner.RegisterFunction(thumbnailerName, durabletest.PlainFunction(generator.Generate))
 
-	return &harness{vision: vision, catalog: catalog, objects: objects, runner: runner}
+	return runner
+}
+
+// uploadedAgain returns a second execution of the same workflow on the same
+// services: what S3 starts when the same key is uploaded once more.
+func (h *harness) uploadedAgain(t *testing.T) *harness {
+	t.Helper()
+
+	again := *h
+	again.runner = h.newRunner(t)
+
+	return &again
 }
 
 // run drives the execution until it finishes or needs something from outside.
@@ -118,6 +140,26 @@ func (h *harness) endsFailed(t *testing.T, key string) {
 
 	if result.Operation("mark-failed") == nil {
 		t.Errorf("the mark-failed operation never ran:\n%s", result.FormatTree())
+	}
+}
+
+// leftAlone checks that a superseded run kept its hands off the upload: the
+// record still has the status the newer run gave it, and nothing was deleted.
+func (h *harness) leftAlone(t *testing.T, result *durabletest.TestResult, status drive.Status) {
+	t.Helper()
+
+	if file := h.file(t); file.Status != status {
+		t.Errorf("catalog record = %s, want it left at %s", file.Status, status)
+	}
+
+	for _, bucket := range []string{uploadBucket, thumbnailBucket} {
+		if !h.objects.Has(drive.Object{Bucket: bucket, Key: catPhoto}) {
+			t.Errorf("the superseded run deleted the object in %s", bucket)
+		}
+	}
+
+	if result.Operation("discard-upload") != nil {
+		t.Errorf("the superseded run started deleting:\n%s", result.FormatTree())
 	}
 }
 

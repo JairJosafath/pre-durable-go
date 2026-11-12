@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	visionAttempts     = 4
-	visionInitialDelay = 2 * time.Second
-	visionBackoffRate  = 2
+	retryAttempts     = 4
+	retryInitialDelay = 2 * time.Second
+	retryBackoffRate  = 2
 )
 
 // analyzeAndThumbnail looks at the image and makes its thumbnail at the same
@@ -73,20 +73,27 @@ func (p *Pipeline) analyze(ctx durable.Context, upload drive.Upload) (drive.Anal
 }
 
 // retryTransient retries a failed step with exponential backoff, unless the
-// failure is one that no retry can fix. Between attempts the execution is
-// suspended: waiting costs no compute.
+// failure is a permanent one. Between attempts the execution is suspended:
+// waiting costs no compute.
 func retryTransient() durable.RetryStrategy {
 	backoff := durable.MustNewRetryStrategy(durable.RetryConfig{
-		MaxAttempts:  visionAttempts,
-		InitialDelay: visionInitialDelay,
-		BackoffRate:  visionBackoffRate,
+		MaxAttempts:  retryAttempts,
+		InitialDelay: retryInitialDelay,
+		BackoffRate:  retryBackoffRate,
 	})
 
 	return func(attempt durable.RetryAttempt) durable.RetryDecision {
-		if errors.Is(attempt.Err, drive.ErrUnsupportedImage) {
+		if permanent(attempt.Err) {
 			return durable.RetryDecision{Retry: false}
 		}
 
 		return backoff(attempt)
 	}
+}
+
+// permanent reports whether a failure stays a failure however often the step
+// is tried: an image that cannot be analysed, or a record that a newer upload
+// has taken over.
+func permanent(err error) bool {
+	return errors.Is(err, drive.ErrUnsupportedImage) || errors.Is(err, drive.ErrSuperseded)
 }
