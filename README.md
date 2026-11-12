@@ -292,6 +292,14 @@ Lambda does not retry a durable execution that fails. The S3 event that
 started it is kept for 14 days in the queue named by the `FailedUploadsQueue`
 stack output.
 
+A later deploy can seem to hang at the end. Every deploy publishes a new
+version of the durable function and deletes the old one, and Lambda does not
+delete a version while an execution on it still waits, for a review for
+instance. The new code is live as soon as the stack says
+`UPDATE_COMPLETE_CLEANUP_IN_PROGRESS`; CloudFormation then retries the
+delete for up to half an hour before it gives up and finishes. Answering the
+open reviews first avoids the wait.
+
 ### A user, some photos, and the web page
 
 ```bash
