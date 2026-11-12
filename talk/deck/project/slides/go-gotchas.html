@@ -2,31 +2,31 @@
 <svg id="nav-arc-s" aria-label="Topic navigation" style="position:absolute;left:0px;top:0px" width="1920" height="540" viewBox="0 0 1920 540"><defs><radialGradient id="ag" gradientUnits="userSpaceOnUse" cx="48.2" cy="48.2" r="330"><stop offset="0" stop-color="rgb(0,173,216)" stop-opacity="0.8"/><stop offset="0.32" stop-color="rgb(0,173,216)" stop-opacity="0.42"/><stop offset="0.62" stop-color="rgb(0,173,216)" stop-opacity="0.2"/><stop offset="1" stop-color="rgb(0,173,216)" stop-opacity="0"/></radialGradient><radialGradient id="af" gradientUnits="userSpaceOnUse" cx="87.1" cy="87.1" r="62"><stop offset="0" stop-color="rgb(0,173,216)" stop-opacity="0.9"/><stop offset="0.6" stop-color="rgb(0,173,216)" stop-opacity="0.85"/><stop offset="1" stop-color="rgb(0,173,216)" stop-opacity="0"/></radialGradient></defs><path fill-rule="evenodd" fill="url(#ag)" d="M0 0 H1920 V540 H0 Z M0 430 a430 430 0 1 0 860 0 a430 430 0 1 0 -860 0 Z"/><g transform="translate(370.9 -51.4) scale(0.8)" opacity="0.6" fill="none" stroke="#006E8A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M-10 -13 L-22 0 L-10 13 M10 -13 L22 0 L10 13 M4 -17 L-4 17"/></g><g transform="translate(292.3 -35.0) scale(0.8)" opacity="0.6" fill="none" stroke="#006E8A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 -21 L-11 3 L1 3 L-5 21 L11 -3 L-1 -3 Z" fill="#006E8A" stroke="none"/></g><g transform="translate(217.4 -5.9) scale(0.8)" opacity="0.6" fill="none" stroke="#006E8A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M0 -19 L21 17 L-21 17 Z"/><path d="M0 -6 L0 5"/><circle cx="0" cy="11" r="1.5" fill="#006E8A" stroke="none"/></g><g transform="translate(148.4 35.2) scale(0.8)" opacity="0.6" fill="none" stroke="#006E8A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><rect x="-23" y="-18" width="46" height="36" rx="6"/><path d="M-13 -7 L-5 0 L-13 7 M1 8 L12 8"/></g><circle cx="87.1" cy="87.1" r="62" fill="url(#af)"/><g transform="translate(87.1 87.1) scale(1.3)" opacity="1" fill="none" stroke="#F6F4EE" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M-7.65 5.51 A13 13 0 1 1 7.91 5.32"/><path d="M-6 13 L6 13 M-4 20 L4 20"/></g></svg>
 <div style="display:flex;flex-direction:column;gap:12px;padding:0px 0px 0px 48px">
 <p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">Go · Surprises</p>
-<h2 style="font-size:64px;font-weight:600;line-height:1.1">Five things that catch you out in Go</h2>
+<h2 style="font-size:64px;font-weight:600;line-height:1.1">Three things that catch you out in Go</h2>
 </div>
 <x-embed style="position:absolute;left:128px;top:264px;width:1664px;height:640px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
 <canvas id="c"></canvas>
 <script>
 (function(){
-var c=document.getElementById('c'),g=c.getContext('2d'),BW=1664,BH=640,END=10;
+var c=document.getElementById('c'),g=c.getContext('2d'),BW=1664,BH=640,END=7;
 var F=parseFloat((location.hash.match(/t=([\d.]+)/)||[])[1]);
 function fit(){var d=Math.min(window.devicePixelRatio||1,2);c.width=innerWidth*d;c.height=innerHeight*d;g.setTransform(c.width/BW,0,0,c.height/BH,0,0)}
 function cl(v){return Math.max(0,Math.min(1,v))}
 function P(t,a,b){return cl((t-a)/(b-a))}
 var CY='#5DC9E2',OR='#F2A65A',TX='#E6EDF3',MU='#A9B7C4',BG='#101820',LN='#2A3A4A';
 var MO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace',GL='ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#%*+=';
-var R=[['Zero-value MaxAttempts','selects the default, not one attempt: use NoRetry()'],['Map iteration order','randomized: sort the keys before creating operations'],['Callback results','raw bytes by default: string, []byte, json.RawMessage'],['Unawaited futures','the invocation does not wait for them'],['Invalid handler options','Start and Wrap panic at program start']];
+var R=[['Map iteration order','randomized: sort the keys before creating operations'],['Unawaited futures','the invocation does not wait for them'],['Invalid handler options','Start and Wrap panic at program start']];
 function scr(s,k,tick,salt){var n=Math.floor(k*(s.length+6)),o='',j;for(j=0;s.length>j;j++){if(n-6>j){o+=s.charAt(j)}else if(n>j){var ch=s.charAt(j);if(ch===' '){o+=' '}else{var r=Math.abs(Math.sin((j+salt)*12.9898+tick*78.233)*43758.5453)%1;o+=GL.charAt(Math.floor(r*GL.length))}}}return o}
 function txt(s,X,Y,f,col,al){if(!(al>0))return;g.globalAlpha=al;g.font=f;g.fillStyle=col;g.textAlign='left';g.textBaseline='middle';g.fillText(s,X,Y);g.globalAlpha=1}
 function draw(t){
 var fade=P(t,0,.4),i,tick=Math.floor(t*24);
 g.clearRect(0,0,BW,BH);g.fillStyle=BG;g.fillRect(0,0,BW,BH);
-for(i=0;5>i;i++){var s=.5+i*1.6,Y=64+i*128,a=P(t,s,s+.3),k1=P(t,s,s+.8),k2=P(t,s+.3,s+1.3),act=P(t,s,s+.3)*(1-P(t,s+1.5,s+1.8));
-if(act>0){g.globalAlpha=.1*act*fade;g.fillStyle=CY;g.fillRect(0,Y-64,BW,128);g.globalAlpha=1}
-if(i>0){g.globalAlpha=fade*a;g.fillStyle=LN;g.fillRect(48,Y-65,1568*P(t,s,s+.6),2);g.globalAlpha=1}
-txt('0'+(i+1),48,Y,'600 34px '+MO,OR,fade*a);
-txt(scr(R[i][0],k1,tick,i*31),150,Y,'600 32px '+MO,1>k1?CY:TX,fade);
-txt(scr(R[i][1],k2,tick,i*57+9),704,Y,'500 24px '+MO,1>k2?CY:MU,fade)}
+for(i=0;3>i;i++){var s=.5+i*1.6,RH=BH/3,Y=RH/2+i*RH,a=P(t,s,s+.3),k1=P(t,s,s+.8),k2=P(t,s+.3,s+1.3),act=P(t,s,s+.3)*(1-P(t,s+1.5,s+1.8));
+if(act>0){g.globalAlpha=.1*act*fade;g.fillStyle=CY;g.fillRect(0,Y-RH/2,BW,RH);g.globalAlpha=1}
+if(i>0){g.globalAlpha=fade*a;g.fillStyle=LN;g.fillRect(48,Y-RH/2-1,1568*P(t,s,s+.6),2);g.globalAlpha=1}
+txt('0'+(i+1),48,Y,'600 40px '+MO,OR,fade*a);
+txt(scr(R[i][0],k1,tick,i*31),160,Y,'600 38px '+MO,1>k1?CY:TX,fade);
+txt(scr(R[i][1],k2,tick,i*57+9),720,Y,'500 27px '+MO,1>k2?CY:MU,fade)}
 }
 var T0=-1,LT=0;
 function fr(n){if(0>T0)T0=n;if(n-LT>900)T0=n;LT=n;draw(Math.min((n-T0)/1000,END));requestAnimationFrame(fr)}
@@ -36,5 +36,5 @@ go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
 })();
 </script>
 </x-embed>
-<aside>13:15 to 14:00. No clicks. Style: text scramble, like a departures board. The five rows decode one after another, a new one every 1.6 seconds, so pace one sentence per row; if you are behind, let it run and go to the demo. One: in Go a zero MaxAttempts means "use the default" (3 for RetryConfig, 6 for LinearRetryConfig, 60 for WaitConfig); porting maxAttempts: 0 or 1 from JavaScript means durable.NoRetry(), or MaxAttempts: 1 on a WaitConfig. Also note the unconfigured step default is ExponentialBackoff() with 6 attempts, while a RetryConfig you build yourself defaults to 3. Two: map iteration again, because it is the determinism bug Go developers actually hit. Three: callback results pass through RawSerdes, so the type parameter should be string, []byte or json.RawMessage unless you pass WithCallbackSerdes(durable.JSONSerdes). The JavaScript and Python SDKs also return the raw payload; in Go the surprise is that a struct type parameter fails at run time. Four: StepAsync, InvokeAsync and Go queue their start even if never awaited, but the invocation answers with the handler's outcome and does not wait, so a body may not run to completion. The JavaScript SDK behaves the same way, so this is a gotcha, not a difference. Only one, two and five are real differences from the other SDKs. Five: handler options are read once at program start, so Start and Wrap panic on an invalid one: a bad option fails the cold start, not a request.</aside>
+<aside>13:15 to 14:00. No clicks. Style: text scramble, like a departures board. The three rows decode one after another, a new one every 1.6 seconds, so pace one sentence per row; if you are behind, let it run and go to the demo. One: map iteration again, because it is the determinism bug Go developers actually hit. Two: StepAsync, InvokeAsync and Go queue their start even if never awaited, but the invocation answers with the handler's outcome and does not wait, so a body may not run to completion. The JavaScript SDK behaves the same way, so this is a gotcha, not a difference. Three: handler options are read once at program start, so Start and Wrap panic on an invalid one: a bad option fails the cold start, not a request. Map order and handler options are real differences from the other SDKs.</aside>
 </section>
