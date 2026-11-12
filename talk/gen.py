@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Rebuilds the grouped slides of the deck from base/slides plus the canvas scenes in scenes/.
-# cover.html, why.html, demo-video.html and wrap.html are not generated: edit them directly in deck/project/slides.
+# cover.html, why.html, demo-video.html, demo-play.html and wrap.html are not generated: edit them directly in deck/project/slides.
 import re, json, os
 S = os.path.dirname(os.path.abspath(__file__))
 BK = S + '/base/slides'            # slides as they were before the sidebar/split pass; gen.py reuses their content
@@ -504,7 +504,8 @@ ORDER = [('cover', None, 0, ''), ('why', None, 0, ''),
     ('demo', 'demo', 0, ''), ('demo-2', 'demo', 0, ''), ('demo-3', 'demo', 0, ''), ('demo-4', 'demo', 0, ''), ('demo-5', 'demo', 0, ''),      # the architecture, one flow per click
     ('demo-handler', 'demo', 1, ''), ('demo-parallel', 'demo', 1, ''), ('demo-review', 'demo', 1, ''),
     ('demo-data', 'demo', 2, ''), ('demo-data-2', 'demo', 2, ''), ('demo-data-3', 'demo', 2, ''), ('demo-data-4', 'demo', 2, ''),      # the table, one step per click
-    ('demo-video', None, 0, ''),      # hand-written placeholder: the recorded demo plays here
+    ('demo-video', None, 0, ''),      # hand-written title card for the demo
+    ('demo-play', None, 0, ''),       # hand-written: the recorded demo, a clip in the deck's asset store (not in the repo)
     ('wrap', None, 0, '')]      # flag h would keep a slide in the deck but skip it when presenting
 
 changed = []
