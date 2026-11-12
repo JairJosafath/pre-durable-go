@@ -88,7 +88,37 @@ describe('api', () => {
     const open = methods.filter((m) => m.AuthorizationType === 'NONE' && m.HttpMethod !== 'OPTIONS');
 
     expect(open).toHaveLength(3); // login, signup, confirm
-    expect(methods.filter((m) => m.AuthorizationType === 'COGNITO_USER_POOLS')).toHaveLength(7);
+    expect(methods.filter((m) => m.AuthorizationType === 'COGNITO_USER_POOLS')).toHaveLength(8);
+  });
+
+  test('execution histories are read by one function, which can do nothing else with executions', () => {
+    const statement = Match.objectLike({ Action: 'lambda:GetDurableExecutionHistory', Effect: 'Allow' });
+    template.resourcePropertiesCountIs(
+      'AWS::IAM::Policy',
+      { PolicyDocument: { Statement: Match.arrayWith([statement]) } },
+      1,
+    );
+
+    const policies = Object.values(template.findResources('AWS::IAM::Policy'))
+      .map((policy) => JSON.stringify(policy.Properties.PolicyDocument))
+      .filter((document) => document.includes('lambda:GetDurableExecutionHistory'));
+
+    expect(policies).toHaveLength(1);
+    expect(policies[0]).not.toContain('SendDurableExecutionCallback');
+    expect(policies[0]).not.toContain('lambda:InvokeFunction');
+  });
+
+  test('GET /executions needs a signed-in user and the name of a file', () => {
+    const resources = template.findResources('AWS::ApiGateway::Resource', { Properties: { PathPart: 'executions' } });
+    const [resourceId] = Object.keys(resources);
+    expect(resourceId).toBeDefined();
+
+    template.hasResourceProperties('AWS::ApiGateway::Method', {
+      HttpMethod: 'GET',
+      ResourceId: { Ref: resourceId },
+      AuthorizationType: 'COGNITO_USER_POOLS',
+      RequestParameters: { 'method.request.querystring.key': true },
+    });
   });
 
   test('catalog queries are paged and stay inside the caller\'s partition', () => {

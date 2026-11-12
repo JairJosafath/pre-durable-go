@@ -77,6 +77,7 @@ const SUB = `$util.escapeJavaScript($context.authorizer.claims.sub).replaceAll("
  *   DELETE /object/{key+}                 delete an upload (S3)
  *   GET    /presigned?action=&key=        presigned URL for an original (Lambda)
  *   POST   /reviews                       approve or reject an upload (Lambda)
+ *   GET    /executions?key=               what the durable execution of an upload has done (Lambda)
  */
 export class PrimeDriveApi extends Construct {
   readonly api: RestApi;
@@ -113,6 +114,7 @@ export class PrimeDriveApi extends Construct {
     this.addObjectRoutes(props.uploads, props.thumbnails);
     this.addPresignRoute(props.uploads);
     this.addReviewRoute(props.table, props.workflow);
+    this.addHistoryRoute(props.table, props.workflow);
   }
 
   private addAuthRoutes(client: UserPoolClient): void {
@@ -276,5 +278,29 @@ export class PrimeDriveApi extends Construct {
     );
 
     this.api.root.addResource('reviews').addMethod('POST', new LambdaIntegration(reviewer), this.signedIn);
+  }
+
+  private addHistoryRoute(table: TableV2, workflow: Alias): void {
+    const history = goLambda(this, 'History', 'history', {
+      description: 'Shows what the durable execution of an upload has done so far',
+      environment: { TABLE_NAME: table.tableName },
+    });
+    table.grantReadData(history);
+
+    // Read-only, and only for executions of the workflow function. Which
+    // execution a caller gets to see is decided by the function: it takes
+    // the ARN from the caller's own file record.
+    const workflowArn = workflow.lambda.functionArn;
+    history.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['lambda:GetDurableExecutionHistory'],
+        resources: [workflowArn, `${workflowArn}:*`],
+      }),
+    );
+
+    this.api.root.addResource('executions').addMethod('GET', new LambdaIntegration(history), {
+      ...this.signedIn,
+      requestParameters: { 'method.request.querystring.key': true },
+    });
   }
 }

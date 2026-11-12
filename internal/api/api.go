@@ -1,6 +1,6 @@
 // Package api holds the Lambda handlers behind the REST API: one hands out
-// presigned URLs, the other passes a reviewer's decision to the durable
-// execution that is waiting for it.
+// presigned URLs, one passes a reviewer's decision to the durable execution
+// that is waiting for it, and one shows what such an execution has done.
 package api
 
 import (
