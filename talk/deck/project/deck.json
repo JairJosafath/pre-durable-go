@@ -69,7 +69,7 @@
       "start": "go"
     },
     "s5": {
-      "description": "The primedrive demo and the takeaways.",
+      "description": "The primedrive demo and the closing slide with links.",
       "start": "demo"
     }
   },
