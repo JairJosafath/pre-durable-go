@@ -40,7 +40,7 @@ nothing; it ends with the result `SUPERSEDED`.
 | Path | What it is |
 | --- | --- |
 | `infra/` | CDK app: buckets, table, Cognito, REST API, the durable function |
-| `internal/pipeline/` | The durable workflow and its tests |
+| `internal/pipeline/` | The durable workflow and its tests; start at [pipeline.go](internal/pipeline/pipeline.go), one file per stage ([doc.go](internal/pipeline/doc.go) lists them) |
 | `internal/drive/` | Domain types and the review policy; no AWS, no durable SDK |
 | `internal/awsdrive/` | S3, DynamoDB, Rekognition and callback adapters |
 | `internal/imagenet/` | Open-source vision adapter (ResNet-50 on TensorFlow Serving) |
@@ -58,17 +58,17 @@ From the [Go SDK guide](https://docs.aws.amazon.com/durable-execution/sdk-refere
 | Idea | Code |
 | --- | --- |
 | The handler and `durable.Start` | [cmd/pipeline/main.go](cmd/pipeline/main.go), [pipeline.go `Handle`](internal/pipeline/pipeline.go) |
-| Steps and checkpointing | [pipeline.go `save`](internal/pipeline/pipeline.go) |
-| Retry strategies | [analysis.go `retryTransient`](internal/pipeline/analysis.go) |
+| Steps and checkpointing | [record.go `save`](internal/pipeline/record.go) |
+| Retry strategies | [retry.go `retryTransient`](internal/pipeline/retry.go) |
 | Goroutines and `durable.Go` | [analysis.go `analyzeAndThumbnail`](internal/pipeline/analysis.go) |
 | Futures and combinators (`InvokeAsync`, `Join`) | [analysis.go `analyzeAndThumbnail`](internal/pipeline/analysis.go) |
 | Invoking another function | [analysis.go](internal/pipeline/analysis.go), [cmd/thumbnailer](cmd/thumbnailer/main.go) |
 | Callbacks (`WaitForCallback`) | [review.go](internal/pipeline/review.go), [awsdrive/callbacks.go](internal/awsdrive/callbacks.go) |
 | Typed errors | [review.go](internal/pipeline/review.go) (`CallbackTimeoutError`), [pipeline.go `Handle`](internal/pipeline/pipeline.go) (`OperationError`) |
-| A business outcome as a step result, not an error | [pipeline.go `save`](internal/pipeline/pipeline.go) |
-| Nondeterminism inside a step | [pipeline.go `register`](internal/pipeline/pipeline.go) (the run's random name) |
-| `Map` and `Parallel` | [outcome.go](internal/pipeline/outcome.go) |
-| Replay-aware logging | `ctx.Logger()` in [pipeline.go](internal/pipeline/pipeline.go), `sc.Logger()` in [analysis.go](internal/pipeline/analysis.go) |
+| A business outcome as a step result, not an error | [record.go `save`](internal/pipeline/record.go) |
+| Nondeterminism inside a step | [register.go `register`](internal/pipeline/register.go) (the run's random name) |
+| `Map` and `Parallel` | [publish.go](internal/pipeline/publish.go) (`Map`), [discard.go](internal/pipeline/discard.go) (`Parallel`) |
+| Replay-aware logging | `ctx.Logger()` in [record.go `settle`](internal/pipeline/record.go), `sc.Logger()` in [analysis.go](internal/pipeline/analysis.go) |
 | Static analysis with durablelint | `make lint`, pinned in [tools/go.mod](tools/go.mod) |
 | Testing with durabletest | [harness_test.go](internal/pipeline/harness_test.go), [pipeline_test.go](internal/pipeline/pipeline_test.go) |
 | Cloud runner | [cloud_test.go](internal/pipeline/cloud_test.go) |
