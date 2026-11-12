@@ -175,8 +175,8 @@ make local-seed
 ```
 
 `local-seed` downloads about twenty random photos from Wikimedia Commons, one
-per topic (a cat, a bridge, a pizza), and four that show beer or wine, which
-the pipeline sends to review. They are kept in `local/samples/`; `FRESH=1`
+per topic (a cat, a bridge, a pizza), and four that show beer or wine, to
+give you something to review. They are kept in `local/samples/`; `FRESH=1`
 downloads a new random set, and `SAMPLES=<folder>` uploads your own photos
 instead.
 
@@ -276,9 +276,16 @@ make seed NAME=alice
 
 `seed` uploads the same sample photos as `make local-seed` into the user's
 drive: about twenty random ones and four with beer or wine. Each upload
-starts an execution of the durable function, and Rekognition flags the four
-as Alcohol, so they wait for a review. Rekognition is billed per image: the
-set costs about 5 US cents outside the free tier.
+starts an execution of the durable function. Rekognition flagged three of the
+four as Alcohol when this was tried (two empty beer bottles passed), and
+those wait for a review. Rekognition is billed per image: the set costs about
+5 US cents outside the free tier.
+
+The photos go up one every two seconds. A new AWS account allows only 10
+Lambda executions at once, and every upload runs the durable function and the
+thumbnailer side by side. Uploaded in one burst, 14 of the 24 photos ended as
+`FAILED`: the thumbnailer was refused with `Rate Exceeded`. `PACE=0` uploads
+without the pause, for an account with the usual limit of 1,000.
 
 ```bash
 make web

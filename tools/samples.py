@@ -36,7 +36,8 @@ TOPICS = [
 ]  # fmt: skip
 
 # Photos that should need a review, named <name>.jpg. These are fixed, not
-# random: each one clearly shows alcohol.
+# random: each one clearly shows alcohol. Rekognition's moderation flagged
+# all of them but the empty beer bottles when this was tried.
 REVIEW = {
     "beer": "File:Chilled glass of beer.jpg",
     "beer-bottles": "File:Grolsch Beer Bottles.jpg",

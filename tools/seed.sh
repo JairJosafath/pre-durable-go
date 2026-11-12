@@ -6,11 +6,15 @@
 #   tools/seed.sh local [user]       the local stack       or: make local-seed
 #
 # The photos are downloaded once into local/samples/ (see tools/samples.py):
-# about twenty random ones, and four with beer or wine that should end up
+# about twenty random ones, and four with beer or wine, most of which end up
 # with a reviewer. Set FRESH=1 to download a new random set, or SAMPLES=<dir>
 # to upload your own JPEGs and PNGs instead.
 #
 # Uploading the same photo again replaces it: the pipeline runs again.
+#
+# In AWS the photos are uploaded one every two seconds, because a new account
+# allows only 10 Lambda executions at once. PACE=<seconds> changes the pause;
+# PACE=0 is fine for an account with the usual limit of 1,000.
 #
 # In AWS every photo is analysed by Amazon Rekognition, which is billed per
 # image: the whole set costs about 5 US cents outside the free tier.
@@ -21,6 +25,7 @@ set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 samples=${SAMPLES:-$root/local/samples}
 local_api=${LOCAL_API:-localhost:8080}
+pace=${PACE:-2}
 
 usage() {
   echo "usage: $0 aws <username> | local [user]" >&2
@@ -60,7 +65,7 @@ content_type() {
 # prefix. That is where the browser puts them too, and the object landing
 # there is what starts the durable function.
 seed_aws() {
-  local username=$1 pool subject bucket
+  local username=$1 pool subject bucket photo name
   need aws
 
   pool=$(stack_resource AWS::Cognito::UserPool)
@@ -69,9 +74,18 @@ seed_aws() {
     --query "UserAttributes[?Name=='sub'].Value | [0]" --output text 2>/dev/null) || subject=
   found "$subject" || die "no user $username. Create it with: make user NAME=$username"
 
-  aws s3 cp "$samples" "s3://$bucket/users/$subject/" --recursive --no-progress \
-    --exclude '*' --include '*.jpg' --include '*.jpeg' --include '*.png' \
-    --include '*.JPG' --include '*.JPEG' --include '*.PNG'
+  # One photo at a time, with a pause in between. Every upload runs the durable
+  # function and the thumbnailer at the same moment, and a new AWS account
+  # allows only 10 Lambda executions at once. Uploaded in one burst, most of
+  # the set ends as FAILED: the thumbnailer is refused with "Rate Exceeded".
+  echo "Uploading one photo every $pace seconds, to stay under Lambda's concurrency limit ..."
+
+  while read -r photo; do
+    name=$(basename "$photo")
+    aws s3 cp "$photo" "s3://$bucket/users/$subject/$name" --only-show-errors
+    echo "  $name"
+    sleep "$pace"
+  done < <(photos)
 
   echo
   echo "Uploaded to $username's drive. Every photo started an execution of the durable function."
