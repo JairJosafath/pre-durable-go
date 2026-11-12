@@ -47,3 +47,14 @@ stack_resource() {
   found "$value" || die "$STACK has no $1"
   printf '%s\n' "$value"
 }
+
+# stack_resource_named <prefix> prints the ID of the stack's resource whose
+# logical name starts with the prefix, such as StorageThumbnails. For when
+# the stack has several resources of one type.
+stack_resource_named() {
+  local value
+  value=$(aws cloudformation describe-stack-resources --stack-name "$STACK" \
+    --query "StackResources[?starts_with(LogicalResourceId, '$1')].PhysicalResourceId | [0]" --output text) || not_deployed
+  found "$value" || die "$STACK has no resource named $1..."
+  printf '%s\n' "$value"
+}

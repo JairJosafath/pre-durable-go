@@ -128,6 +128,15 @@ seed: ## Upload sample photos, some of which need a review: make seed NAME=alice
 	@test -n "$(DRIVE_USER)" || { echo "usage: make seed NAME=<username>" >&2; exit 2; }
 	@tools/seed.sh aws "$(DRIVE_USER)"
 
+.PHONY: empty
+empty: ## Delete a user's photos and catalog records for good: make empty NAME=alice
+	@test -n "$(DRIVE_USER)" || { echo "usage: make empty NAME=<username>" >&2; exit 2; }
+	@tools/empty-drive.sh "$(DRIVE_USER)"
+
+.PHONY: empty-all
+empty-all: ## Start from scratch: empty every drive and stop the open executions
+	@tools/empty-drive.sh --all
+
 .PHONY: web
 web: frontend/node_modules ## Run the frontend on localhost:3000 against the deployed API
 	@tools/web.sh

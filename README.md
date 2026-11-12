@@ -332,6 +332,16 @@ thumbnailer side by side. Uploaded in one burst, 14 of the 24 photos ended as
 without the pause, for an account with the usual limit of 1,000.
 
 ```bash
+make empty-all
+```
+
+`empty-all` starts from scratch: it deletes every user's photos, thumbnails
+and catalog records, and stops the executions that are still open. The users
+stay. `make empty NAME=alice` empties one drive. Both show what they are
+about to delete and ask first, because nothing can be brought back; `DRY=1`
+only shows.
+
+```bash
 make web
 ```
 
