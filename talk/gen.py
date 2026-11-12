@@ -309,23 +309,105 @@ NEW['go-test'] = mk('go-test', 'Go · Tooling', 'durabletest: a one-hour wait in
     '<ul style="font-size:24px;line-height:1.4;color:#3D4852">\n<li>RunUntilComplete invokes the handler as many times as the execution needs</li>\n<li>result.Operations lists every recorded operation</li>\n<li>SendCallbackSuccess resolves a callback the handler is blocked on</li>\n<li>NewCloudRunner runs the same assertions against a deployed function</li>\n</ul>\n</div>\n' +
     xe(976, 264, 816, 418, scene('testrun', 820, 420, 6.5)),
     'No clicks; the panel plays once, about five seconds. The local runner executes the handler in process: invocation 1 runs up to the one-hour Wait, the runner completes the timer itself instead of waiting, invocation 2 replays and finishes, and the test reads the result. No network and no AWS credentials. The runner checks each checkpoint against the service limits, for example a step result over 262,144 bytes. Because result.Operations lists every recorded operation, a test can assert that a step ran once across replays. The runner takes no testing handle, so the same calls work in a plain main with go run.')
-NEW['demo-data'] = mk('demo-data', 'Demo · Data', 'How PrimeDrive stores an upload',
-    xe(128, 264, 1664, 640, scene('dynamo', 1664, 640, 10.5)) +
-    '<p style="position:absolute;left:128px;top:920px;width:1664px;font-size:24px;line-height:1.4;color:#3D4852">One DynamoDB table. The user ID and file name here are examples.</p>\n',
-    'No clicks; the table plays once, about ten seconds. One DynamoDB table holds everything a user uploaded, in that user\'s partition: the partition key is user#, then the Cognito subject. An upload writes one item whose sort key starts with #file#; it carries the status, the labels and the thumbnail key. When the upload is published, each label adds two kinds of item: an index item, #index#, then the search term, then the object key, which is what search reads, and a label item, #label#, then the label, which feeds the suggestions under the search box. A label with aliases gets one index item per alias as well, so a search for an alias is the same single query. Then the important part for durable execution: the indexing step runs again, as it would on a retry, and writes the same keys, so the table still has five items. Every item is keyed by what it describes, which is what makes that step safe to retry and replay. Last, search: GET /query?index=sea is an API Gateway integration straight onto DynamoDB, a query for sort keys that begin with #index#sea. User 42, beach.jpg and the two labels are made up for the slide; the key layout is the one in internal/awsdrive/catalog.go.')
+def step_scene(name, bw, bh, off, end, clear=0, defs=''):
+    # One click of a multi-step scene: the timeline starts at `off`, so what came before is already drawn, and holds at `end`.
+    s = scene(name, bw, bh, end, clear, defs)
+    a = 'frame(Math.min((n-T0)/1000,END))'
+    assert a in s
+    return s.replace(a, f'frame(Math.min({off}+(n-T0)/1000,END))') if off else s
+def caption(cid, lead, text):
+    b = f'<b><span style="color:#006E8A">{lead}</span></b> ' if lead else ''
+    return f'<p id="{cid}" style="position:absolute;left:128px;top:920px;width:1664px;font-size:30px;line-height:1.3;color:#101820">{b}{text}</p>\n'
 
-ARCH_ICONS = 'var IC={' + ','.join(f"{k}:new Path2D('{aws_path(n)}')" for k, n in
-    (('l', 'aws-lambda'), ('s', 'aws-s3'), ('d', 'aws-dynamodb'), ('a', 'aws-api-gateway'), ('k', 'aws-rekognition'))) + '};\n'
-NEW['demo'] = mk('demo', 'Demo · Architecture', 'PrimeDrive, the Go Durable way',
-    xe(128, 264, 1664, 640, scene('arch', 1664, 640, 13, 0, ARCH_ICONS)) +
-    '<p style="position:absolute;left:128px;top:920px;width:1664px;font-size:24px;line-height:1.4;color:#3D4852">One durable function replaces the Step Functions state machine, its trigger function and the ASL definition.</p>\n',
-    'Show the video of the app first, then this slide. No clicks; the diagram plays once, about twelve seconds, in four beats. '
-    'One, upload: the browser asks the API for a presigned URL (the presigner function) and puts the file straight into S3. '
-    'Two, the pipeline: S3 invokes the durable function through its live alias, with no trigger function in between. It registers the upload, runs the Rekognition steps while a plain Lambda makes the thumbnail, and writes to DynamoDB. '
-    'Three, review: when the analysis gives a reason, the execution suspends. POST /reviews reaches the reviewer function, which reads the callback ID from the file record and calls SendDurableExecutionCallbackSuccess; the same execution resumes. '
-    'Four, search: GET /query, /files and /labels are API Gateway integrations straight onto DynamoDB, with no function at all. '
-    'Not drawn: Cognito signs users in and API Gateway checks the token on every route; thumbnails go to a second bucket. '
-    'Infrastructure facts if asked, from infra/lib/constructs/upload-pipeline.ts: durableConfig is the only difference from a regular function; execution timeout is the 24 hour review timeout plus one hour, retention 14 days, and one invocation is limited to one minute.')
+# The DynamoDB table, one click per step. The dark div under the canvas keeps the panel in place while slides change.
+DATA_STEPS = [
+    (0, 2.44, 'Step 1 of 4; it plays on arrival and three clicks follow. One DynamoDB table holds everything a user uploaded, in that user\'s partition: the partition key is user#, then the Cognito subject. An upload writes one item whose sort key starts with #file#; it carries the status, the labels and the thumbnail key. User 42, beach.jpg and the two labels are made up for the slide; the key layout is the one in internal/awsdrive/catalog.go.'),
+    (2.8, 4.84, 'Step 2 of 4. When the upload is published, each label adds two kinds of item: an index item, #index#, then the search term, then the object key, which is what search reads, and a label item, #label#, then the label, which feeds the suggestions under the search box. A label with aliases gets one index item per alias as well, so a search for an alias is the same single query.'),
+    (5.2, 7.6, 'Step 3 of 4, the important part for durable execution: the indexing step runs again, as it would on a retry, and writes the same keys, so the table still has five items. Every item is keyed by what it describes, which is what makes that step safe to retry and replay.'),
+    (8, 11.3, 'Step 4 of 4, search: GET /query?index=sea is an API Gateway integration straight onto DynamoDB, a query for sort keys that begin with #index#sea.'),
+]
+for k, (off, end, note) in enumerate(DATA_STEPS):
+    sid = 'demo-data' if k == 0 else f'demo-data-{k + 1}'
+    NEW[sid] = mk(sid, 'Demo · Data', 'How PrimeDrive stores an upload',
+        '<div id="data-panel" style="position:absolute;left:128px;top:264px;width:1664px;height:640px;background:#101820;border-radius:16px"></div>\n' +
+        xe(128, 264, 1664, 640, step_scene('dynamo', 1664, 640, off, end)) +
+        '<p id="data-note" style="position:absolute;left:128px;top:920px;width:1664px;font-size:24px;line-height:1.4;color:#3D4852">One DynamoDB table. The user ID and file name here are examples.</p>\n',
+        note)
+    LOGOS[sid] = LOGOS['demo-data']
+
+# The demo architecture, drawn the way AWS reference architectures are: service icons in their own colours inside an
+# AWS Cloud box, the user outside it, right-angled arrows. The picture is a still SVG; a transparent canvas over it
+# draws the flow of the current step, so the diagram itself never leaves the screen between clicks.
+AX, AY = 128, 264
+ARCH_N = {   # key: (x, y, size, icon, service, resource)
+    'api':  (400, 150, 72, 'aws-api-gateway', 'Amazon API Gateway', 'REST API'),
+    's3':   (400, 490, 72, 'aws-s3', 'Amazon S3', 'uploads bucket'),
+    'pre':  (700, 150, 72, 'aws-lambda', 'AWS Lambda', 'presigner'),
+    'rev':  (700, 320, 72, 'aws-lambda', 'AWS Lambda', 'reviewer'),
+    'pipe': (1020, 490, 96, 'aws-lambda', 'AWS Lambda', '<b><span style="color:#006E8A">durable function</span></b>'),
+    'ddb':  (1420, 150, 72, 'aws-dynamodb', 'Amazon DynamoDB', 'catalog table'),
+    'rek':  (1420, 320, 72, 'aws-rekognition', 'Amazon Rekognition', 'labels and moderation'),
+    'thumb': (1420, 490, 72, 'aws-lambda', 'AWS Lambda', 'thumbnailer'),
+}
+ARCH_E = {   # arrows; each ends 16 px short of its target so the head lands on the icon's edge
+    'u-api':   [(132, 320), (240, 320), (240, 150), (348, 150)],
+    'u-s3':    [(132, 320), (240, 320), (240, 490), (348, 490)],
+    'api-pre': [(442, 150), (648, 150)],
+    'api-rev': [(442, 150), (560, 150), (560, 320), (648, 320)],
+    'api-ddb': [(400, 108), (400, 62), (1420, 62), (1420, 98)],
+    's3-pipe': [(442, 490), (956, 490)],
+    'rev-pipe': [(742, 320), (1020, 320), (1020, 426)],
+    'pipe-rek': [(1074, 490), (1220, 490), (1220, 320), (1368, 320)],
+    'pipe-thumb': [(1074, 490), (1368, 490)],
+    'pipe-ddb': [(1074, 490), (1220, 490), (1220, 150), (1368, 150)],
+}
+ARCH_STEPS = [   # lead, caption, arrows in the order they draw, icons to ring, speaker notes
+    ('', 'One durable function replaces the Step Functions state machine and its trigger function.', [], [],
+     'The architecture, drawn the AWS way: service icons inside the AWS Cloud box, the user outside it. It arrives without highlights; each of the next four clicks lights up one flow in teal. '
+     'Not drawn: Cognito signs users in and API Gateway checks the token on every route; thumbnails go to a second bucket. '
+     'Infrastructure facts if asked, from infra/lib/constructs/upload-pipeline.ts: durableConfig is the only difference from a regular function; execution timeout is the 24 hour review timeout plus one hour, retention 14 days, and one invocation is limited to one minute.'),
+    ('Upload', 'The browser gets a presigned URL from the API and puts the file straight into S3.', ['u-api', 'api-pre', 'u-s3'], ['api', 'pre', 's3'],
+     'Step 1 of 4, upload: the browser asks the API for a presigned URL (the presigner function) and puts the file straight into S3.'),
+    ('Pipeline', 'S3 starts the durable function. It analyses, makes a thumbnail and records the result.', ['s3-pipe', 'pipe-rek', 'pipe-thumb', 'pipe-ddb'], ['s3', 'pipe', 'rek', 'thumb', 'ddb'],
+     'Step 2 of 4, the pipeline: S3 invokes the durable function through its live alias, with no trigger function in between. It registers the upload, runs the Rekognition steps while a plain Lambda makes the thumbnail, and writes to DynamoDB.'),
+    ('Review', 'The execution suspends. The reviewer function sends the callback and it resumes.', ['u-api', 'api-rev', 'rev-pipe'], ['api', 'rev', 'pipe'],
+     'Step 3 of 4, review: when the analysis gives a reason, the execution suspends. POST /reviews reaches the reviewer function, which reads the callback ID from the file record and calls SendDurableExecutionCallbackSuccess; the same execution resumes.'),
+    ('Search', 'API Gateway queries DynamoDB directly, with no function in between.', ['u-api', 'api-ddb'], ['api', 'ddb'],
+     'Step 4 of 4, search: GET /query, /files and /labels are API Gateway integrations straight onto DynamoDB, with no function at all.'),
+]
+def arch_base():
+    ink, line = '#232F3E', '#687078'
+    o = (f'<svg id="arch-base" aria-label="PrimeDrive architecture on AWS" style="position:absolute;left:{AX}px;top:{AY}px" width="1664" height="640" viewBox="0 0 1664 640">'
+         '<rect x="0.5" y="0.5" width="1663" height="639" rx="16" fill="#FFFFFF" stroke="#DDD8CC"/>'
+         f'<rect x="200" y="16" width="1440" height="608" fill="none" stroke="{ink}" stroke-width="2"/>'
+         f'<rect x="200" y="16" width="40" height="40" fill="{ink}"/>'
+         '<path fill="#FFFFFF" d="M211 43 a6 6 0 0 1 0.6 -12 a8.5 8.5 0 0 1 16.4 -1.6 a6.8 6.8 0 0 1 0.8 13.6 Z"/>')
+    for pts in ARCH_E.values():
+        (x1, y1), (x2, y2) = pts[-2], pts[-1]
+        d = abs(x2 - x1) + abs(y2 - y1); ux, uy = (x2 - x1) / d, (y2 - y1) / d
+        o += (f'<path fill="none" stroke="{line}" stroke-width="3" stroke-linejoin="round" d="M' + ' L'.join(f'{x} {y}' for x, y in pts) + '"/>'
+              f'<path fill="{line}" d="M{x2 + ux * 13:g} {y2 + uy * 13:g} L{x2 - ux * 3 - uy * 8:g} {y2 - uy * 3 + ux * 8:g} L{x2 - ux * 3 + uy * 8:g} {y2 - uy * 3 - ux * 8:g} Z"/>')
+    o += f'<circle cx="96" cy="304" r="14" fill="{ink}"/><path fill="{ink}" d="M70 350 a26 24 0 0 1 52 0 Z"/>'
+    for x, y, s, icon, _, _ in ARCH_N.values():
+        col = re.search(r'fill="(#[0-9A-Fa-f]{6})"', rd(f'{LG}/{icon}.svg')).group(1)
+        o += (f'<g transform="translate({x - s / 2:g} {y - s / 2:g}) scale({s / 80:g})"><rect width="80" height="80" fill="{col}"/>'
+              f'<path fill="#FFFFFF" fill-rule="evenodd" d="{aws_path(icon)}"/></g>')
+    o += '</svg>\n'
+    lab = "position:absolute;width:320px;text-align:center;font-size:24px;line-height:1.25;color:#101820"
+    o += f'<p id="arch-l-cloud" style="position:absolute;left:{AX + 252}px;top:{AY + 21}px;width:240px;font-size:24px;font-weight:600;line-height:1.25;color:#232F3E">AWS Cloud</p>\n'
+    o += f'<p id="arch-l-user" style="{lab};left:{AX + 96 - 160}px;top:{AY + 358}px"><b>User</b></p>\n'
+    for k, (x, y, s, _, svc, res) in ARCH_N.items():
+        o += f'<p id="arch-l-{k}" style="{lab};left:{AX + x - 160}px;top:{AY + y + s // 2 + 8}px"><b>{svc}</b><br><span style="color:#3D4852">{res}</span></p>\n'
+    return o
+ARCH_BASE = arch_base()
+for k, (lead, cap, edges, hot, note) in enumerate(ARCH_STEPS):
+    sid = 'demo' if k == 0 else f'demo-{k + 1}'
+    body = ARCH_BASE
+    if edges:
+        defs = ('var EDG=' + json.dumps([ARCH_E[e] for e in edges], separators=(',', ':')) +
+                ',HOT=' + json.dumps([list(ARCH_N[h][:3]) for h in hot], separators=(',', ':')) + ';\n')
+        body += xe(AX, AY, 1664, 640, scene('archflow', 1664, 640, 1.5 + len(edges) * .6, 1, defs))
+    NEW[sid] = mk(sid, 'Demo · Architecture', 'PrimeDrive, the Go Durable way', body + caption(f'arch-cap-{k}', lead, cap), note)
 NEW['demo-handler'] = code_slide('demo-handler', 'One handler, top to bottom', '''
 func (p *Pipeline) Handle(ctx durable.Context, event events.S3Event,
 ) (drive.File, error) {
@@ -401,8 +483,9 @@ ORDER = [('cover', None, 0, ''), ('why', None, 0, ''),
     ('go-i-errors', 'go', 2, 'i'), ('go-errors', 'go', 2, ''), ('go-errors-2', 'go', 2, ''),
     ('go-i-tools', 'go', 3, 'i'), ('go-tooling', 'go', 3, ''), ('go-test', 'go', 3, ''),
     ('go-i-diff', 'go', 4, 'i'), ('go-gotchas', 'go', 4, ''),
-    ('demo', 'demo', 0, ''), ('demo-handler', 'demo', 1, ''), ('demo-parallel', 'demo', 1, ''), ('demo-review', 'demo', 1, ''),
-    ('demo-data', 'demo', 2, ''),
+    ('demo', 'demo', 0, ''), ('demo-2', 'demo', 0, ''), ('demo-3', 'demo', 0, ''), ('demo-4', 'demo', 0, ''), ('demo-5', 'demo', 0, ''),      # the architecture, one flow per click
+    ('demo-handler', 'demo', 1, ''), ('demo-parallel', 'demo', 1, ''), ('demo-review', 'demo', 1, ''),
+    ('demo-data', 'demo', 2, ''), ('demo-data-2', 'demo', 2, ''), ('demo-data-3', 'demo', 2, ''), ('demo-data-4', 'demo', 2, ''),      # the table, one step per click
     ('demo-video', None, 0, ''),      # hand-written placeholder: the recorded demo plays here
     ('wrap', None, 0, '')]      # flag h would keep a slide in the deck but skip it when presenting
 
