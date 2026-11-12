@@ -35,6 +35,19 @@ belongs to the run that registered last, and every later write is conditional
 on still owning it. An execution that was overtaken changes and deletes
 nothing; it ends with the result `SUPERSEDED`.
 
+## Quick start
+
+`make` lists every target. These are the ones you need most:
+
+| You want to | Run |
+| --- | --- |
+| Check everything before a push: lint, tests, synth | `make check` |
+| Try the whole app on your machine, without AWS | `make local`, then `make local-seed` in a second terminal |
+| Deploy to AWS | `make deploy` |
+| Get a user to sign in with, and its password | `make user NAME=alice` |
+| Put sample photos in that user's drive | `make seed NAME=alice` |
+| Open the web page against the deployment | `make web` |
+
 ## Layout
 
 | Path | What it is |
@@ -50,6 +63,7 @@ nothing; it ends with the result `SUPERSEDED`.
 | `cmd/local/` | Composition root for your laptop: open-source implementations |
 | `frontend/` | The Next.js frontend, with a review panel |
 | `local/` | Docker Compose file for the offline stack |
+| `tools/` | The scripts behind the make targets |
 
 ## Where each SDK idea lives
 
@@ -117,6 +131,14 @@ make lint
 function length and more, see [.golangci.yml](.golangci.yml)) and durablelint,
 which finds code that would break on replay.
 
+```bash
+make check
+```
+
+`check` runs all of it in one go, with the frontend's lint, the tests of the
+CDK app and a `cdk synth` that compiles the four Go functions. It needs no AWS
+credentials.
+
 ## Run it locally on open-source services
 
 | AWS | Local stand-in |
@@ -139,16 +161,27 @@ execution suspends until you answer on the terminal.
 
 ### With the frontend
 
-The same stack can serve the frontend. Start the API in one terminal and the
-frontend in another, then open http://localhost:3000:
+One command starts the containers, the API and the frontend. Open
+http://localhost:3000 when it says so; Ctrl+C stops it.
 
 ```bash
-make local-api
+make local
 ```
 
+In a second terminal, fill the drive with sample photos:
+
 ```bash
-make local-web
+make local-seed
 ```
+
+`local-seed` downloads about twenty random photos from Wikimedia Commons, one
+per topic (a cat, a bridge, a pizza), and four that show beer or wine, which
+the pipeline sends to review. They are kept in `local/samples/`; `FRESH=1`
+downloads a new random set, and `SAMPLES=<folder>` uploads your own photos
+instead.
+
+To watch the API and the frontend in separate terminals, run `make local-up`
+and then `make local-api` and `make local-web`.
 
 | AWS | Local stand-in |
 | --- | --- |
@@ -159,7 +192,7 @@ make local-web
 
 Nothing in the code that runs in AWS knows about local mode. The frontend
 reads two settings ([frontend/.env.example](frontend/.env.example)), which
-`make local-web` sets:
+`make local` and `make local-web` set:
 
 | Setting | AWS | Local |
 | --- | --- | --- |
@@ -171,9 +204,31 @@ sends the user's name as its token. The local API takes that name where AWS
 takes the `sub` claim of a verified Cognito token. A deployed API rejects
 such a token, so the setting cannot open a real drive.
 
-Suspended executions live in the memory of `make local-api`. Restart it and
-an upload that was waiting for a review can no longer be answered; upload it
-again.
+### What the local stack is not
+
+It is a stand-in to try the workflow with, not a copy of the cloud.
+`make local` prints this list every time it starts:
+
+- **Labels are not Rekognition's.** A small open classifier (ResNet-50,
+  trained on ImageNet) knows 1,000 object classes and guesses which of them
+  the whole photo is. Labels are often odd or plain wrong, and it cannot pick
+  out several things in one picture.
+- **There is no moderation model.** A photo is flagged only when the
+  classifier sees beer, wine, a cocktail shaker or a gun. A photo it is less
+  than 40% sure about goes to review too, so more photos wait for a reviewer
+  than would in AWS.
+- **Nobody signs in.** You are `alice`. There is no Cognito, and the API
+  believes whatever name the browser sends.
+- **Executions are not durable across restarts.** They live in the memory of
+  the local API. Stop it and an upload that was waiting for a review can no
+  longer be answered; upload it again.
+- **The catalog is kept in memory** by DynamoDB Local. `make local-down`
+  deletes it, with every uploaded photo.
+- **Missing altogether:** S3 events and their at-least-once delivery, the
+  dead-letter queue, IAM permissions, API Gateway, and Lambda's limits and
+  timeouts. Code that works here can still fail on those in AWS.
+
+Stop the containers and delete their data with:
 
 ```bash
 make local-down
@@ -181,22 +236,53 @@ make local-down
 
 ## Deploy
 
-Requires Node.js, Go, and AWS credentials for a region that offers both
-Lambda durable functions and Amazon Rekognition.
+Requires Node.js, Go, the AWS CLI, and AWS credentials for a region that
+offers both Lambda durable functions and Amazon Rekognition. The targets
+below use `eu-west-1`; add `AWS_REGION=<region>` to any of them for another.
 
 ```bash
-cd infra && npm install && npx cdk deploy
+make bootstrap
 ```
+
+```bash
+make deploy
+```
+
+`bootstrap` is needed once per account and region. `make outputs` shows the
+stack's outputs again later, and `make destroy` deletes the stack with its
+users, uploads and catalog.
 
 Lambda does not retry a durable execution that fails. The S3 event that
 started it is kept for 14 days in the queue named by the `FailedUploadsQueue`
 stack output.
 
-Then start the frontend with the `ApiUrl` stack output:
+### A user, some photos, and the web page
 
 ```bash
-cd frontend && npm install && NEXT_PUBLIC_ENDPOINT=<ApiUrl> npm run dev
+make user NAME=alice
 ```
 
-Users sign up through `POST /auth/signup` and `POST /auth/confirm`, as in the
-original project.
+`user` creates the user in the stack's Cognito user pool and prints a
+generated password to copy into the sign-in form. No email is sent and there
+is no code to confirm. Run it again for the same name to get a new password.
+It needs credentials that may administer the user pool, which the ones that
+deployed the stack can. The API also has `POST /auth/signup` and
+`POST /auth/confirm`, as in the original project, for signing up with a code
+sent by email.
+
+```bash
+make seed NAME=alice
+```
+
+`seed` uploads the same sample photos as `make local-seed` into the user's
+drive: about twenty random ones and four with beer or wine. Each upload
+starts an execution of the durable function, and Rekognition flags the four
+as Alcohol, so they wait for a review. Rekognition is billed per image: the
+set costs about 5 US cents outside the free tier.
+
+```bash
+make web
+```
+
+`web` runs the frontend on http://localhost:3000 against the deployed API,
+which it reads from the stack's `ApiUrl` output. Only the web page is local.
