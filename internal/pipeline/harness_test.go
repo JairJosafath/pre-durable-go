@@ -40,11 +40,14 @@ func newHarness(t *testing.T, vision *drivetest.Vision) *harness {
 	objects := drivetest.NewObjects()
 	objects.Add(drive.Object{Bucket: uploadBucket, Key: catPhoto}, drivetest.PNG(t, 640, 480))
 
-	workflow := pipeline.New(vision, catalog, objects, pipeline.Config{
+	workflow, err := pipeline.New(vision, catalog, objects, pipeline.Config{
 		ThumbnailerFunction: thumbnailerName,
 		ReviewTimeout:       24 * time.Hour,
 		ReviewPolicy:        drive.ReviewPolicy{MinConfidence: 80},
 	})
+	if err != nil {
+		t.Fatalf("configure the pipeline: %v", err)
+	}
 
 	h := &harness{vision: vision, catalog: catalog, objects: objects, workflow: workflow}
 	h.runner = h.newRunner(t)

@@ -106,7 +106,12 @@ func run(ctx context.Context, opts options) error {
 		return err
 	}
 
-	result, err := execute(ctx, newRunner(services, opts), services.catalog, upload)
+	workflow, err := newWorkflow(services, opts)
+	if err != nil {
+		return err
+	}
+
+	result, err := execute(ctx, newRunner(workflow, services), services.catalog, upload)
 	if err != nil {
 		return err
 	}
@@ -116,10 +121,10 @@ func run(ctx context.Context, opts options) error {
 
 type runner = durabletest.LocalRunner[events.S3Event, drive.File]
 
-// newRunner returns a runner for one execution of the workflow.
-func newRunner(services *services, opts options) *runner {
-	// The same constructor as in cmd/pipeline, with different implementations.
-	workflow := pipeline.New(
+// newWorkflow wires the workflow to the local services. It is the same
+// constructor as in cmd/pipeline, with different implementations.
+func newWorkflow(services *services, opts options) (*pipeline.Pipeline, error) {
+	return pipeline.New(
 		imagenet.NewVision(services.objects, &http.Client{Timeout: visionTimeout}, opts.visionURL, visionModel),
 		services.catalog,
 		services.objects,
@@ -129,7 +134,10 @@ func newRunner(services *services, opts options) *runner {
 			ReviewPolicy:        drive.ReviewPolicy{MinConfidence: opts.minConfidence},
 		},
 	)
+}
 
+// newRunner returns a runner for one execution of the workflow.
+func newRunner(workflow *pipeline.Pipeline, services *services) *runner {
 	// The local runner plays the part of the Lambda durable execution
 	// service: it keeps the checkpoints and re-invokes the handler.
 	logs := slog.NewTextHandler(os.Stderr, nil)

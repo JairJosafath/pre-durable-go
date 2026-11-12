@@ -39,7 +39,12 @@ func serve(ctx context.Context, opts options) error {
 		return err
 	}
 
-	running := newExecutions(func() *runner { return newRunner(services, opts) })
+	workflow, err := newWorkflow(services, opts)
+	if err != nil {
+		return err
+	}
+
+	running := newExecutions(func() *runner { return newRunner(workflow, services) })
 	local := &gateway{
 		services:   services,
 		executions: running,

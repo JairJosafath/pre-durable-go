@@ -69,5 +69,5 @@ func newWorkflow(ctx context.Context) (*pipeline.Pipeline, error) {
 			ReviewTimeout:       reviewTimeout,
 			ReviewPolicy:        drive.ReviewPolicy{MinConfidence: minLabelConfidence},
 		},
-	), nil
+	)
 }
