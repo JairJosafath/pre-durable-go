@@ -1,78 +1,94 @@
-import useLabels from "@/hooks/useLabels";
+import { useRef } from "react";
+import { Logo, SearchIcon, UploadIcon, CloseIcon, CodeIcon } from "@/components/icons";
 
-export default function Topbar({ searchInput, input, setFile, auth, setSearch}) {
-    // Suggestions come from the user's own labels: one small query per pause in typing.
-    const { labels, suggest } = useLabels(auth?.idToken);
+/** The bar that stays on top: search in the middle, upload and dev mode on the right. */
+export default function TopBar({ username, search, setSearch, onUpload, dev, setDev, offline }) {
+  const picker = useRef(null);
+  const box = useRef(null);
 
-    return (
-        <header className="flex justify-between px-8 py-3">
-        <div className="flex justify-around w-1/2 items-center">
-          <label className="text-xl">PrimeDrive:demo</label>
-          <div className="flex items-center">
-            <input
-              type="text"
-              placeholder="Search"
-              className="w-96 rounded bg-neutral-800 p-2"
-              ref={searchInput}
-              list="label-suggestions"
-              onChange={(e) => suggest(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setSearch(searchInput.current.value.trim());
-              }}
-            />
-            <datalist id="label-suggestions">
-              {labels.map((label) => (
-                <option key={label} value={label} />
-              ))}
-            </datalist>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-6 h-6 hover:text-primary-500 cursor-pointer hover:bg-white hover:text-black hover:h-10 hover:py-2 w-8 rounded-r-md active:scale-95 active:bg-neutral-200"
+  return (
+    <header className="sticky top-0 z-30 border-b border-line/70 bg-canvas/75 backdrop-blur-xl">
+      <div className="flex h-16 items-center gap-4 px-5 sm:px-8">
+        <button type="button" className="flex shrink-0 items-center gap-2.5" onClick={() => setSearch("")} title="All photos">
+          <Logo />
+          <span className="hidden text-[17px] font-semibold tracking-tight sm:block">PrimeDrive</span>
+        </button>
+
+        <div className="mx-auto flex w-full max-w-xl items-center gap-2 rounded-2xl border border-line bg-surface px-3.5 transition-colors focus-within:border-accent/70 hover:border-line-strong">
+          <SearchIcon className="h-[18px] w-[18px] shrink-0 text-faint" />
+          <input
+            ref={box}
+            type="text"
+            value={search}
+            placeholder="Search your photos by what is in them"
+            aria-label="Search by label"
+            className="h-10 w-full bg-transparent text-[15px] placeholder:text-faint focus:outline-none"
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={(event) => event.key === "Escape" && setSearch("")}
+          />
+          {search && (
+            <button
+              type="button"
+              aria-label="Clear the search"
+              className="rounded-full p-1 text-muted transition-colors hover:bg-hover hover:text-fg"
               onClick={() => {
-                setSearch(searchInput.current.value.trim());
+                setSearch("");
+                box.current?.focus();
               }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-              />
-            </svg>
-          </div>
+              <CloseIcon className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        <div className="flex gap-14 items-center">
-          <div className="flex gap-4 hover:text-black hover:bg-white p-2 rounded cursor-pointer active:scale-95 active:bg-neutral-200">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
-              />
-            </svg>
 
-            <label className="cursor-pointer" onClick={()=>{
-              input.current.click()
-            }}>Upload</label>
-            <input type="file" className="hidden" ref={input} 
-            onChange={(e)=>{
-               setFile(()=>e.target.files[0]);
-               input.current.value = null;
+        <div className="flex shrink-0 items-center gap-2">
+          {offline && (
+            <span className="hidden items-center gap-1.5 rounded-full border border-warn/30 bg-warn/10 px-2.5 py-1 text-xs text-warn md:flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-warn" />
+              Reconnecting
+            </span>
+          )}
+
+          <button
+            type="button"
+            aria-pressed={dev}
+            title="Dev mode: watch the durable function work"
+            className={`flex h-10 items-center gap-2 rounded-xl border px-3 font-mono text-[13px] transition ${
+              dev ? "border-accent/50 bg-accent/10 text-accent" : "border-line text-muted hover:border-line-strong hover:text-fg"
+            }`}
+            onClick={() => setDev((on) => !on)}
+          >
+            <CodeIcon className="h-[18px] w-[18px]" />
+            <span className="hidden md:inline">dev</span>
+            <span className={`h-1.5 w-1.5 rounded-full ${dev ? "animate-breathe bg-accent" : "bg-faint"}`} />
+          </button>
+
+          <button
+            type="button"
+            className="flex h-10 items-center gap-2 rounded-xl bg-accent px-4 font-medium text-accent-ink transition hover:bg-accent-strong active:scale-[.97]"
+            onClick={() => picker.current.click()}
+          >
+            <UploadIcon className="h-[18px] w-[18px]" />
+            <span className="hidden sm:inline">Upload</span>
+          </button>
+          <input
+            ref={picker}
+            type="file"
+            className="hidden"
+            onChange={(event) => {
+              if (event.target.files[0]) onUpload(event.target.files[0]);
+              event.target.value = "";
             }}
-            />
-          </div>
-            <label className="rounded-full bg-pink-300 w-8 h-8 justify-center flex items-center" >{auth?.username[0].toUpperCase() }</label>
+          />
+
+          <span
+            title={`Signed in as ${username}`}
+            className="hidden h-10 w-10 items-center justify-center rounded-full border border-line bg-gradient-to-br from-raised to-hover text-sm font-semibold text-fg sm:flex"
+          >
+            {username?.[0]?.toUpperCase()}
+          </span>
         </div>
-      </header>
-    )
+      </div>
+    </header>
+  );
 }

@@ -19,3 +19,18 @@ export async function api(path, { token, method = "GET", body, accept } = {}) {
 export function fileName(key) {
   return key.split("/").slice(2).join("/");
 }
+
+/** Reads a DynamoDB file item, as returned by GET /files. */
+export function toFile(item) {
+  return {
+    key: item.key.S,
+    title: fileName(item.key.S),
+    status: item.status?.S || "",
+    // The run changes every time the same file name is uploaded again.
+    run: item.run?.S || "",
+    execution: item.execution?.S || "",
+    labels: (item.labels?.L || []).map((label) => label.M.name.S),
+    reasons: (item.review?.M?.reasons?.L || []).map((reason) => reason.S),
+    note: item.note?.S || "",
+  };
+}

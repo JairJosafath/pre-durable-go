@@ -3,31 +3,70 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+html,
+body {
+  background: #090a0c;
+  color: #e9ebee;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* A faint glow behind the top of the page, so the canvas is not flat black. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 28rem at 20% -10%, rgba(93, 201, 226, 0.09), transparent 60%),
+    radial-gradient(50rem 24rem at 90% -20%, rgba(138, 110, 255, 0.06), transparent 60%);
+}
+
+::selection {
+  background: rgba(93, 201, 226, 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid #5dc9e2;
+  outline-offset: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #313743 transparent;
+}
+
+@layer components {
+  /* The moving sheen of something that is still being worked on. */
+  .sheen {
+    background-image: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.07) 50%, transparent 70%);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-line bg-raised px-2.5 py-1 text-xs text-muted transition-colors;
+  }
+
+  button.chip:hover {
+    @apply border-line-strong text-fg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
