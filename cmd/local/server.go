@@ -29,6 +29,7 @@ const (
 //	DELETE /object/{key+}            delete an original from SeaweedFS
 //	GET    /presigned                the Presigner handler that runs in Lambda
 //	POST   /reviews                  the Reviewer handler that runs in Lambda
+//	GET    /executions               the History handler that runs in Lambda, on the local runner's records
 //	PUT    /uploads/{key+}           local only: the upload bucket and its S3 event
 //
 // There is no /auth route and no Cognito. A request is signed in as the user
@@ -52,10 +53,11 @@ func serve(ctx context.Context, opts options) error {
 		http:       &http.Client{Timeout: gatewayTimeout},
 	}
 
-	// The two Lambda handlers are the ones cmd/presigner and cmd/reviewer
-	// start, with local implementations behind their interfaces.
+	// The three Lambda handlers are the ones cmd/presigner, cmd/reviewer and
+	// cmd/history start, with local implementations behind their interfaces.
 	presigner := api.NewPresigner(localSigner{Objects: services.objects, host: opts.serve}, uploadBucket)
 	reviewer := api.NewReviewer(services.catalog, running)
+	history := api.NewHistory(services.catalog, running)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /files", signedIn(local.query(allFiles)))
@@ -65,6 +67,7 @@ func serve(ctx context.Context, opts options) error {
 	mux.Handle("DELETE /object/{key...}", signedIn(local.remove))
 	mux.Handle("GET /presigned", signedIn(lambdaProxy(presigner.Handle)))
 	mux.Handle("POST /reviews", signedIn(lambdaProxy(reviewer.Handle)))
+	mux.Handle("GET /executions", signedIn(lambdaProxy(history.Handle)))
 	mux.HandleFunc("PUT /uploads/{key...}", local.upload)
 
 	server := &http.Server{Addr: opts.serve, Handler: cors(mux), ReadHeaderTimeout: readHeaderTimeout}

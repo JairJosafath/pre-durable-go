@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"slices"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/aws/aws-durable-execution-sdk-go/durable/durabletest"
 	"github.com/aws/aws-lambda-go/events"
@@ -14,16 +16,23 @@ import (
 	"gdf/internal/drive"
 )
 
+// remembered is how many executions the local API keeps the history of.
+// Lambda keeps them for days; here the oldest ones make room.
+const remembered = 500
+
 var errNoSuchCallback = errors.New("no execution is waiting on this callback (was the local API restarted?)")
 
 // executions plays the part of the Lambda durable execution service for the
 // local API: it starts one execution per upload, keeps the suspended ones in
-// memory, and resumes the right one when a review decision arrives.
+// memory, resumes the right one when a review decision arrives, and
+// remembers what each one did.
 type executions struct {
 	newRunner func() *runner
 
 	mu   sync.Mutex
 	open []*execution
+	// recent holds the latest executions, finished ones too, oldest first.
+	recent []*execution
 }
 
 // execution is one run of the workflow. A local runner must not be used from
@@ -32,6 +41,13 @@ type execution struct {
 	mu     sync.Mutex
 	runner *runner
 	event  events.S3Event
+
+	// key is the object key of the upload the execution is for.
+	key     string
+	started time.Time
+	// seen is what the runner reported when the execution last suspended or
+	// ended. It is read while the runner is busy, so it is not under mu.
+	seen atomic.Pointer[durabletest.TestResult]
 }
 
 func newExecutions(newRunner func() *runner) *executions {
@@ -41,10 +57,12 @@ func newExecutions(newRunner func() *runner) *executions {
 // Start runs the workflow for an upload in the background, as S3 does in AWS
 // when it invokes the durable function with an ObjectCreated event.
 func (e *executions) Start(upload drive.Upload) {
-	run := &execution{runner: e.newRunner(), event: uploadedEvent(upload)}
+	run := &execution{runner: e.newRunner(), event: uploadedEvent(upload), key: upload.Key, started: time.Now()}
 
 	e.mu.Lock()
 	e.open = append(e.open, run)
+	e.recent = append(e.recent, run)
+	e.recent = e.recent[max(0, len(e.recent)-remembered):]
 	e.mu.Unlock()
 
 	go e.advance(run)
@@ -86,6 +104,8 @@ func (e *executions) advance(run *execution) {
 
 		return
 	}
+
+	run.seen.Store(result)
 
 	fmt.Printf("\nExecution %s after %d invocation(s):\n\n%s\n", result.Status, len(result.Invocations), result.FormatTree())
 
