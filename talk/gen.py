@@ -437,8 +437,7 @@ func (p *Pipeline) Handle(ctx durable.Context, event events.S3Event,
     settled, err := p.process(ctx, file) // analyze, review, publish
 
     // Not every error is a failure: a suspension is passed on.
-    var failure *«durable.OperationError»
-    if errors.As(err, &failure) {
+    if _, ok := errors.AsType[*«durable.OperationError»](err); ok {
         err = p.fail(ctx, file, err)
     }
     // ...
