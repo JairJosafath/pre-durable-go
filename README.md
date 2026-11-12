@@ -58,10 +58,11 @@ nothing; it ends with the result `SUPERSEDED`.
 | `internal/awsdrive/` | S3, DynamoDB, Rekognition and callback adapters |
 | `internal/imagenet/` | Open-source vision adapter (ResNet-50 on TensorFlow Serving) |
 | `internal/drivetest/` | In-memory fakes for tests |
-| `internal/thumbnail/`, `internal/api/` | The thumbnailer and the two API handlers |
+| `internal/execution/` | What a durable execution did, folded from Lambda's history events |
+| `internal/thumbnail/`, `internal/api/` | The thumbnailer and the three API handlers |
 | `cmd/pipeline/` | Composition root for Lambda: AWS implementations |
 | `cmd/local/` | Composition root for your laptop: open-source implementations |
-| `frontend/` | The Next.js frontend, with a review panel |
+| `frontend/` | The Next.js frontend, with a review queue and a dev mode |
 | `local/` | Docker Compose file for the offline stack |
 | `tools/` | The scripts behind the make targets |
 
@@ -103,6 +104,38 @@ The table is shaped for reads. An upload is indexed once, in the background;
 searches happen all the time. Queries are paged (24 items), so the cost of a
 read stays flat as a drive grows. Every item is keyed by what it describes,
 so the pipeline's writes are plain puts that are safe to retry and replay.
+
+## The web page, and dev mode
+
+The frontend shows the drive as it is: the photos, the uploads the pipeline
+is still working on, and the ones that wait for a review. It keeps itself up
+to date by asking `GET /files` again, every second and a half while
+something is being processed and every eight seconds otherwise, and not at
+all while the tab is in the background. There is nothing to refresh.
+
+The **dev** switch in the top bar opens a panel that shows what the durable
+function did for an upload: every operation by name, with its status,
+duration, attempts and errors, and every invocation of the handler, so the
+replays are visible. The panel follows whatever is being processed until you
+pick an upload yourself.
+
+```
+browser ──GET /executions?key=cat.jpg──▶ history function ──▶ catalog: which execution owns cat.jpg?
+                                                          └─▶ Lambda: GetDurableExecutionHistory
+```
+
+Lambda records an event for everything a durable execution does. The
+workflow stores its execution ARN in the file record when it registers an
+upload (`ctx.ExecutionArn()`, in [register.go](internal/pipeline/register.go)).
+The history function ([internal/api/history.go](internal/api/history.go))
+takes that ARN from the caller's own record, never from the request, reads
+the events and folds them into a list of operations
+([internal/execution](internal/execution/doc.go)).
+
+Two limits. Lambda keeps a history for the execution's retention period, 14
+days here; after that the panel says the history is gone. And an upload from
+before this route existed has no execution in its record: upload it again to
+watch it.
 
 ## Test it offline
 
@@ -186,7 +219,7 @@ and then `make local-api` and `make local-web`.
 | AWS | Local stand-in |
 | --- | --- |
 | API Gateway | `cmd/local -serve`, the same routes on `localhost:8080` |
-| Presigner and reviewer functions | The same handlers from `internal/api`, called in-process |
+| Presigner, reviewer and history functions | The same handlers from `internal/api`, called in-process |
 | Cognito | Nothing: you are signed in as `alice` |
 | S3 event that starts the workflow | The upload goes through the local API, which starts it |
 
@@ -222,6 +255,9 @@ It is a stand-in to try the workflow with, not a copy of the cloud.
 - **Executions are not durable across restarts.** They live in the memory of
   the local API. Stop it and an upload that was waiting for a review can no
   longer be answered; upload it again.
+- **Dev mode is coarser.** The local runner reports on an execution when it
+  suspends or ends, so its operations appear all at once, not one by one as
+  they do in AWS.
 - **The catalog is kept in memory** by DynamoDB Local. `make local-down`
   deletes it, with every uploaded photo.
 - **Missing altogether:** S3 events and their at-least-once delivery, the
