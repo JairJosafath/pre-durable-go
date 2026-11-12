@@ -305,10 +305,25 @@ NEW['go-tooling'] = mk('go-tooling', 'Go · Tooling', 'durablelint: catch it bef
           ('Suppress one finding', 'A //durable:ignore comment on the line, or the line above it.')], 128, 692, 1664),
     'No clicks; the scan plays once, about eight seconds. Line 2, time.Now() in orchestration code: durablenondeterminism. Line 3, a go statement around a durable operation: durablegoroutine. Line 6, writing to a captured variable inside a step: durableclosure. Line 7, an operation created inside a step body: durablenestedop. The findings illustrate what each rule is for; they are not captured output from a real run. durablelint lives in its own module, github.com/aws/aws-durable-execution-sdk-go/analysis, Go 1.25 or later.')
 NEW['go-test'] = mk('go-test', 'Go · Tooling', 'durabletest: a one-hour wait in a unit test',
-    '<div style="width:800px;display:flex;flex-direction:column;gap:32px">\n' + panel(code_p('go-tooling'), 800) +
-    '<ul style="font-size:24px;line-height:1.4;color:#3D4852">\n<li>RunUntilComplete invokes the handler as many times as the execution needs</li>\n<li>result.Operations lists every recorded operation</li>\n<li>SendCallbackSuccess resolves a callback the handler is blocked on</li>\n<li>NewCloudRunner runs the same assertions against a deployed function</li>\n</ul>\n</div>\n' +
-    xe(976, 264, 816, 418, scene('testrun', 820, 420, 6.5)),
-    'No clicks; the panel plays once, about five seconds. The local runner executes the handler in process: invocation 1 runs up to the one-hour Wait, the runner completes the timer itself instead of waiting, invocation 2 replays and finishes, and the test reads the result. No network and no AWS credentials. The runner checks each checkpoint against the service limits, for example a step result over 262,144 bytes. Because result.Operations lists every recorded operation, a test can assert that a step ran once across replays. The runner takes no testing handle, so the same calls work in a plain main with go run.')
+    panel(code_html('''
+func handler(ctx durable.Context, n int) (int, error) {
+    err := «durable.Wait»(ctx, "cooldown", time.Hour)
+    if err != nil {
+        return 0, err
+    }
+    return durable.Step(ctx, "add",
+        func(durable.StepContext) (int, error) {
+            return n + 1, nil
+        })
+}
+
+r := «durabletest.NewLocalRunner»(handler)
+result, err := r.RunUntilComplete(41)
+got, err := durabletest.ResultAs[int](result) // 42
+'''), 900) +
+    xe(1060, 264, 732, 375, scene('testrun', 820, 420, 6.5)) +
+    '<ul style="position:absolute;left:1060px;top:671px;width:732px;font-size:24px;line-height:1.4;color:#3D4852">\n<li>RunUntilComplete invokes the handler as many times as the execution needs</li>\n<li>result.Operations lists every recorded operation</li>\n<li>SendCallbackSuccess resolves a callback the handler is blocked on</li>\n<li>NewCloudRunner runs the same assertions against a deployed function</li>\n</ul>\n',
+    'No clicks; the panel plays once, about five seconds. The code shows the function under test and then the test: the handler waits one hour and adds one to its input, so 41 gives 42. The local runner executes the handler in process: invocation 1 runs up to the one-hour Wait, the runner completes the timer itself instead of waiting, invocation 2 replays and finishes, and the test reads the result. No network and no AWS credentials. The runner checks each checkpoint against the service limits, for example a step result over 262,144 bytes. Because result.Operations lists every recorded operation, a test can assert that a step ran once across replays. The runner takes no testing handle, so the same calls work in a plain main with go run.')
 def step_scene(name, bw, bh, off, end, clear=0, defs=''):
     # One click of a multi-step scene: the timeline starts at `off`, so what came before is already drawn, and holds at `end`.
     s = scene(name, bw, bh, end, clear, defs)

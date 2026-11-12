@@ -4,18 +4,10 @@
 <p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">Go · Tooling</p>
 <h2 style="font-size:64px;font-weight:600;line-height:1.1">durabletest: a one-hour wait in a unit test</h2>
 </div>
-<div style="width:800px;display:flex;flex-direction:column;gap:32px">
-<div style="width:800px;background:#101820;border-radius:16px;padding:36px 40px;display:flex;flex-direction:column">
-<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.5;color:#E6EDF3;white-space:nowrap">r := durabletest.NewLocalRunner(handler)<br>result, err := r.RunUntilComplete(41)<br>got, err := durabletest.ResultAs[int](result)</p>
+<div style="width:900px;background:#101820;border-radius:16px;padding:36px 40px;display:flex;flex-direction:column">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.5;color:#E6EDF3;white-space:nowrap">func handler(ctx durable.Context, n int) (int, error) {<br>&#160;&#160;&#160;&#160;err := <span style="color:#5DC9E2">durable.Wait</span>(ctx, "cooldown", time.Hour)<br>&#160;&#160;&#160;&#160;if err != nil {<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;return 0, err<br>&#160;&#160;&#160;&#160;}<br>&#160;&#160;&#160;&#160;return durable.Step(ctx, "add",<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;func(durable.StepContext) (int, error) {<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;return n + 1, nil<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;})<br>}<br><br>r := <span style="color:#5DC9E2">durabletest.NewLocalRunner</span>(handler)<br>result, err := r.RunUntilComplete(41)<br>got, err := durabletest.ResultAs[int](result) <span style="color:#8B9BAA">// 42</span></p>
 </div>
-<ul style="font-size:24px;line-height:1.4;color:#3D4852">
-<li>RunUntilComplete invokes the handler as many times as the execution needs</li>
-<li>result.Operations lists every recorded operation</li>
-<li>SendCallbackSuccess resolves a callback the handler is blocked on</li>
-<li>NewCloudRunner runs the same assertions against a deployed function</li>
-</ul>
-</div>
-<x-embed style="position:absolute;left:976px;top:264px;width:816px;height:418px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
+<x-embed style="position:absolute;left:1060px;top:264px;width:732px;height:375px"><style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}canvas{display:block;width:100vw;height:100vh;border-radius:16px}</style>
 <canvas id="c"></canvas>
 <script>
 (function(){
@@ -61,6 +53,12 @@ go();addEventListener('resize',go);if(isNaN(F))requestAnimationFrame(fr);
 })();
 </script>
 </x-embed>
+<ul style="position:absolute;left:1060px;top:671px;width:732px;font-size:24px;line-height:1.4;color:#3D4852">
+<li>RunUntilComplete invokes the handler as many times as the execution needs</li>
+<li>result.Operations lists every recorded operation</li>
+<li>SendCallbackSuccess resolves a callback the handler is blocked on</li>
+<li>NewCloudRunner runs the same assertions against a deployed function</li>
+</ul>
 
-<aside>No clicks; the panel plays once, about five seconds. The local runner executes the handler in process: invocation 1 runs up to the one-hour Wait, the runner completes the timer itself instead of waiting, invocation 2 replays and finishes, and the test reads the result. No network and no AWS credentials. The runner checks each checkpoint against the service limits, for example a step result over 262,144 bytes. Because result.Operations lists every recorded operation, a test can assert that a step ran once across replays. The runner takes no testing handle, so the same calls work in a plain main with go run.</aside>
+<aside>No clicks; the panel plays once, about five seconds. The code shows the function under test and then the test: the handler waits one hour and adds one to its input, so 41 gives 42. The local runner executes the handler in process: invocation 1 runs up to the one-hour Wait, the runner completes the timer itself instead of waiting, invocation 2 replays and finishes, and the test reads the result. No network and no AWS credentials. The runner checks each checkpoint against the service limits, for example a step result over 262,144 bytes. Because result.Operations lists every recorded operation, a test can assert that a step ran once across replays. The runner takes no testing handle, so the same calls work in a plain main with go run.</aside>
 </section>
