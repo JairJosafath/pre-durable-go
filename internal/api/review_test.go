@@ -31,6 +31,13 @@ func (d decisions) Decide(_ context.Context, callbackID string, decision drive.D
 	return nil
 }
 
+// answered is a decider for a review that somebody answered a moment ago.
+type answered struct{}
+
+func (answered) Decide(context.Context, string, drive.Decision) error {
+	return drive.ErrReviewClosed
+}
+
 func reviewBy(subject string) events.APIGatewayProxyRequest {
 	return events.APIGatewayProxyRequest{
 		Body: `{"key": "users/alice/beer.jpg", "approved": true}`,
@@ -70,5 +77,16 @@ func TestReviewerCannotReachAnotherUsersFile(t *testing.T) {
 
 	if len(sent) != 0 {
 		t.Errorf("a decision was sent for a file the caller does not own: %+v", sent)
+	}
+}
+
+func TestSecondAnswerToAReviewIsAConflict(t *testing.T) {
+	t.Parallel()
+
+	reviewer := api.NewReviewer(files{}, answered{})
+
+	response, err := reviewer.Handle(t.Context(), reviewBy("alice"))
+	if err != nil || response.StatusCode != http.StatusConflict {
+		t.Fatalf("status = %d, err = %v, want 409", response.StatusCode, err)
 	}
 }

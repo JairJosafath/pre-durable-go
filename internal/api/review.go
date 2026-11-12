@@ -16,7 +16,8 @@ type Files interface {
 	File(ctx context.Context, owner, key string) (drive.File, error)
 }
 
-// Decider delivers a decision to the execution waiting on a callback.
+// Decider delivers a decision to the execution waiting on a callback. It
+// returns drive.ErrReviewClosed when that execution has stopped waiting.
 type Decider interface {
 	Decide(ctx context.Context, callbackID string, decision drive.Decision) error
 }
@@ -70,7 +71,22 @@ func (r *Reviewer) Handle(
 	}
 
 	decision := drive.Decision{Approved: body.Approved, Reviewer: reviewer, Note: body.Note}
-	if err := r.decider.Decide(ctx, file.Review.CallbackID, decision); err != nil {
+
+	return r.deliver(ctx, file.Review.CallbackID, decision)
+}
+
+// deliver sends the decision to the execution that waits on the callback.
+func (r *Reviewer) deliver(
+	ctx context.Context, callbackID string, decision drive.Decision,
+) (events.APIGatewayProxyResponse, error) {
+	// The record shows the review as open until the pipeline has acted on the
+	// decision, so a second answer can arrive in between.
+	err := r.decider.Decide(ctx, callbackID, decision)
+	if errors.Is(err, drive.ErrReviewClosed) {
+		return refuse(http.StatusConflict, "this review is already closed")
+	}
+
+	if err != nil {
 		return events.APIGatewayProxyResponse{}, err
 	}
 
