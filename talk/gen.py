@@ -218,28 +218,27 @@ def finish(text, group, idx, trans, dark=False, intro=False, teal=False, prev=No
         return tag.replace('<section id="%s"' % m.group(1), '<section id="%s" data-transition="%s"' % (m.group(1), trans), 1) if trans else tag
     return re.sub(r'<section id="([^"]+)"[^>]*>', fix, text, count=1)
 
-def intro_go(sid, eyebrow, title, line, aside):
-    body = (f'<p style="position:absolute;left:560px;top:412px;width:1232px;font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">{eyebrow}</p>\n'
-            f'<h2 style="position:absolute;left:560px;top:470px;width:1232px;font-size:120px;font-weight:600;line-height:1.1;letter-spacing:-2px">{title}</h2>\n'
+# Topic cards carry no "N of M" line: the sidebar (SDK) and the corner arc (Go) show the position.
+def intro_go(sid, title, line, aside):
+    body = (f'<h2 style="position:absolute;left:560px;top:470px;width:1232px;font-size:120px;font-weight:600;line-height:1.1;letter-spacing:-2px">{title}</h2>\n'
             f'<p style="position:absolute;left:560px;top:624px;width:1232px;font-size:30px;line-height:1.4;color:#3D4852">{line}</p>\n')
     return f'<section id="{sid}" style="{LIGHT}">\n{body}<aside>{aside}</aside>\n</section>\n'
-def intro(sid, eyebrow, title, line, aside):
-    body = (f'<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#006E8A">{eyebrow}</p>\n'
-            f'<h2 style="position:absolute;left:128px;top:470px;width:1220px;text-align:right;font-size:120px;font-weight:600;line-height:1.1;letter-spacing:-2px">{title}</h2>\n'
+def intro(sid, title, line, aside):
+    body = (f'<h2 style="position:absolute;left:128px;top:470px;width:1220px;text-align:right;font-size:120px;font-weight:600;line-height:1.1;letter-spacing:-2px">{title}</h2>\n'
             f'<p style="position:absolute;left:128px;top:624px;width:1220px;text-align:right;font-size:30px;line-height:1.4;color:#3D4852">{line}</p>\n')
     return f'<section id="{sid}" style="{LIGHT}">\n{body}<aside>{aside}</aside>\n</section>\n'
 
 # ---------------------------------------------------------------- slides
 NEW = {}
-NEW['sdk-ops'] = intro('sdk-ops', 'The SDK · 1 of 4', 'Operations', 'Eight building blocks, three of which suspend the function.', 'Topic card, two seconds. The sidebar on the right tracks the four SDK topics: operations, error handling, state, observability. Say: first, what you can actually call.')
-NEW['sdk-errors'] = intro('sdk-errors', 'The SDK · 2 of 4', 'Error handling', 'Retries, backoff, and what replay does with a failure.', 'Topic card, two seconds. Say: second, what happens when something fails.')
-NEW['sdk-state'] = intro('sdk-state', 'The SDK · 3 of 4', 'State', 'What goes into a checkpoint, and how big it can be.', 'Topic card, two seconds. Say: third, where your data lives between invocations.')
-NEW['sdk-obs'] = intro('sdk-obs', 'The SDK · 4 of 4', 'Observability', 'Seeing one execution across many invocations.', 'Topic card, two seconds. Say: last, how you see what an execution did.')
-NEW['go-i-shape'] = intro_go('go-i-shape', 'Go · 1 of 5', 'API shape', 'Operations are generic functions, not methods.', 'Topic card, two seconds. The sidebar now tracks the five Go topics.')
-NEW['go-i-conc'] = intro_go('go-i-conc', 'Go · 2 of 5', 'Concurrency', 'Why a durable context belongs to one goroutine.', 'Topic card, two seconds. Say: this is the most Go-specific part of the talk.')
-NEW['go-i-errors'] = intro_go('go-i-errors', 'Go · 3 of 5', 'Errors', 'Errors are values, and one of them is a signal.', 'Topic card, two seconds.')
-NEW['go-i-tools'] = intro_go('go-i-tools', 'Go · 4 of 5', 'Tooling', 'A linter that knows the rules, and a local test runner.', 'Topic card, two seconds.')
-NEW['go-i-diff'] = intro_go('go-i-diff', 'Go · 5 of 5', 'Surprises', 'Sometimes it doesn\'t <b><span style="color:#00ADD8">GO</span></b> as you think it should.', 'Topic card, two seconds.')
+NEW['sdk-ops'] = intro('sdk-ops', 'Operations', 'Eight building blocks, three of which suspend the function.', 'Topic card, two seconds. The sidebar on the right tracks the four SDK topics: operations, error handling, state, observability. Say: first, what you can actually call.')
+NEW['sdk-errors'] = intro('sdk-errors', 'Error handling', 'Retries, backoff, and what replay does with a failure.', 'Topic card, two seconds. Say: second, what happens when something fails.')
+NEW['sdk-state'] = intro('sdk-state', 'State', 'What goes into a checkpoint, and how big it can be.', 'Topic card, two seconds. Say: third, where your data lives between invocations.')
+NEW['sdk-obs'] = intro('sdk-obs', 'Observability', 'Seeing one execution across many invocations.', 'Topic card, two seconds. Say: last, how you see what an execution did.')
+NEW['go-i-shape'] = intro_go('go-i-shape', 'API shape', 'Operations are generic functions, not methods.', 'Topic card, two seconds. The sidebar now tracks the five Go topics.')
+NEW['go-i-conc'] = intro_go('go-i-conc', 'Concurrency', 'Why a durable context belongs to one goroutine.', 'Topic card, two seconds. Say: this is the most Go-specific part of the talk.')
+NEW['go-i-errors'] = intro_go('go-i-errors', 'Errors', 'Errors are values, and one of them is a signal.', 'Topic card, two seconds.')
+NEW['go-i-tools'] = intro_go('go-i-tools', 'Tooling', 'A linter that knows the rules, and a local test runner.', 'Topic card, two seconds.')
+NEW['go-i-diff'] = intro_go('go-i-diff', 'Surprises', 'Sometimes it doesn\'t <b><span style="color:#00ADD8">GO</span></b> as you think it should.', 'Topic card, two seconds.')
 
 NEW['errors'] = mk('errors', 'The SDK · Error handling', 'Where an error happens decides what happens',
     xe(128, 264, 1664, 560, scene('instep', 1664, 560, 10.5)) +
