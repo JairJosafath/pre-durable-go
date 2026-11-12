@@ -20,7 +20,9 @@ func (p *Pipeline) register(ctx durable.Context, upload drive.Upload) (drive.Fil
 		return drive.File{}, err
 	}
 
-	file := drive.File{Upload: upload, Run: run, Status: drive.StatusProcessing}
+	// The ARN is the same on every replay, so it needs no step. It goes into
+	// the record so that the execution can be looked up from the upload.
+	file := drive.File{Upload: upload, Run: run, Execution: ctx.ExecutionArn(), Status: drive.StatusProcessing}
 
 	_, err = durable.Step(ctx, "register-upload", func(sc durable.StepContext) (durable.Void, error) {
 		return durable.Void{}, p.catalog.RegisterFile(sc, file)

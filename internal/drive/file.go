@@ -9,6 +9,11 @@ type File struct {
 	// then no longer change it.
 	Run string `json:"run,omitempty"`
 
+	// Execution is the ARN of the durable execution that owns the record. It
+	// is how the history of that execution is found: which steps ran, which
+	// were retried, and what it is waiting for.
+	Execution string `json:"execution,omitempty"`
+
 	Status    Status  `json:"status"`
 	Labels    []Label `json:"labels,omitempty"`
 	Thumbnail string  `json:"thumbnail,omitempty"`
