@@ -332,22 +332,22 @@ func (p *Pipeline) Handle(ctx durable.Context, event events.S3Event,
 ) (drive.File, error) {
     upload, err := uploadFrom(event) // plain code: no step
     // ...
-    err = p.save(ctx, "register-upload", file) // a step
+    file, err := p.register(ctx, upload) // two steps
     // ...
     settled, err := p.process(ctx, file) // analyze, review, publish
 
     // Not every error is a failure: a suspension is passed on.
     var failure *«durable.OperationError»
     if errors.As(err, &failure) {
-        return drive.File{}, p.fail(ctx, file, err)
+        err = p.fail(ctx, file, err)
     }
-
+    // ...
     return settled, err
 }''',
     [('Plain code needs no step', 'Reading the S3 event is deterministic: a replay gives the same answer.'),
      ('Suspension is an error', 'When the function waits, the blocked operation returns a signal. Pass it on unchanged.'),
      ('A failure has a type', 'SDK failures match *durable.OperationError. Only then is the upload marked FAILED.')],
-    'From internal/pipeline/pipeline.go. The lines marked with dots are the early returns on err, left out to fit. This is the whole workflow: the function is replayed from the top every time the execution resumes, and operations that already completed return their recorded result. The part that is specific to Go is the end: suspension travels through the error return, so the handler must not treat every error as a failure. It records FAILED only for errors that match durable.OperationError and returns everything else unchanged.')
+    'From internal/pipeline/pipeline.go. The lines marked with dots are left out to fit: the early returns on err and, at the end, the check for a run that a newer upload of the same file has overtaken; such a run changes nothing and ends as SUPERSEDED. register is two steps: one makes a random name for this run, which is nondeterministic and therefore belongs inside a step, and one writes the file record under that name. This is the whole workflow: the function is replayed from the top every time the execution resumes, and operations that already completed return their recorded result. The part that is specific to Go is the end: suspension travels through the error return, so the handler must not treat every error as a failure. It records FAILED only for errors that match durable.OperationError and returns everything else unchanged.')
 NEW['demo-parallel'] = code_slide('demo-parallel', 'Two things at once, safely', '''
 analysis := «durable.Go»(ctx, "analyze-image",
     func(child durable.Context) (drive.Analysis, error) {
@@ -375,6 +375,7 @@ decision, err := «durable.WaitForCallback»[drive.Decision](
     },
     durable.WithCallbackTimeout(p.cfg.ReviewTimeout),
     durable.WithCallbackSerdes(durable.JSONSerdes),
+    durable.WithSubmitterRetry(retryTransient()),
 )
 
 var timedOut *«durable.CallbackTimeoutError»
@@ -386,7 +387,7 @@ return decision, err''',
     [('The submitter runs once', 'It saves the callback ID on the file record. Then the execution suspends.'),
      ('Nothing runs while waiting', 'POST /reviews sends the decision to that callback ID and the execution resumes here.'),
      ('A timeout is a decision', 'errors.As matches CallbackTimeoutError and the upload is rejected.')],
-    'From internal/pipeline/review.go. Review only happens when the policy gives a reason: a moderation flag, or no label at 80 percent confidence; otherwise the upload is approved without waiting. The callback ID never leaves the backend: the reviewer function reads it from the caller\'s own file record and calls SendDurableExecutionCallbackSuccess with the decision as JSON. The review timeout is 24 hours by default. After this, an approved upload is indexed with durable.Map, one step per label, and a rejected one is removed with durable.Parallel.')
+    'From internal/pipeline/review.go. Review only happens when the policy gives a reason: a moderation flag, or no label at 80 percent confidence; otherwise the upload is approved without waiting. POST /reviews names a file, never a callback ID: the reviewer function reads the ID from the caller\'s own file record and calls SendDurableExecutionCallbackSuccess with the decision as JSON. The submitter is a step with a retry strategy; it does not retry when a newer upload of the same file has taken the record over. The review timeout is 24 hours by default. After this, an approved upload is indexed with durable.Map, one step per label, and a rejected one is marked and then removed with durable.Parallel.')
 
 # id -> (group, index, flags)
 ORDER = [('cover', None, 0, ''), ('why', None, 0, ''),
