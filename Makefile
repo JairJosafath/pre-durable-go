@@ -67,11 +67,11 @@ fmt: ## Format the Go code
 
 .PHONY: local
 local: local-up frontend/node_modules ## The whole app on your machine: containers, API and frontend
-	@tools/local.sh
+	@tools/local/run.sh
 
 .PHONY: local-seed
 local-seed: ## Upload sample photos to the local drive, some of which need a review
-	@tools/seed.sh local $(LOCAL_USER)
+	@tools/local/seed.sh $(LOCAL_USER)
 
 .PHONY: local-run
 local-run: ## Run the pipeline once on the terminal: make local-run IMAGE=~/Pictures/cat.jpg
@@ -126,7 +126,7 @@ user: ## Create a user and print a generated password: make user NAME=alice
 .PHONY: seed
 seed: ## Upload sample photos, some of which need a review: make seed NAME=alice
 	@test -n "$(DRIVE_USER)" || { echo "usage: make seed NAME=<username>" >&2; exit 2; }
-	@tools/seed.sh aws "$(DRIVE_USER)"
+	@tools/seed.sh "$(DRIVE_USER)"
 
 .PHONY: empty
 empty: ## Delete a user's photos and catalog records for good: make empty NAME=alice

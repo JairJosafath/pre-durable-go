@@ -7,10 +7,10 @@
 # leaves the containers running, so the next start is quick.
 set -euo pipefail
 
-. "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/../lib.sh"
 need go npm curl
 
-root=$(cd "$(dirname "$0")/.." && pwd)
+root=$(cd "$(dirname "$0")/../.." && pwd)
 api=${LOCAL_API:-localhost:8080}
 user=${LOCAL_USER:-alice}
 

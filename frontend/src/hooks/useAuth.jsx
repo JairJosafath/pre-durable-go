@@ -1,16 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
+import { localAuth } from "@/local/auth";
 
 const STORAGE_KEY = "auth";
 const SESSION_MS = 60 * 60 * 1000; // a Cognito ID token is valid for an hour
-
-// Local development only. When NEXT_PUBLIC_LOCAL_USER names a user, the app
-// starts signed in as that user and never shows the sign-in form. The local
-// API (`make local`) has no Cognito: it takes the token to be the user's
-// name. Against AWS this variable must stay unset; a deployed API would
-// reject such a token, so setting it by mistake cannot let anyone in.
-const localUser = process.env.NEXT_PUBLIC_LOCAL_USER;
-const localAuth = localUser ? { username: localUser, authenticated: true, idToken: localUser } : null;
 
 const signedOut = { authenticated: false };
 
