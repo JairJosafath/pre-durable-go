@@ -15,7 +15,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 
-	"gdf/internal/awsdrive"
+	"gdf/internal/aws/catalog"
+	"gdf/internal/aws/objects"
 	"gdf/internal/drive"
 )
 
@@ -23,8 +24,8 @@ import (
 type services struct {
 	s3      *s3.Client
 	dynamo  *dynamodb.Client
-	objects *awsdrive.Objects
-	catalog *awsdrive.Catalog
+	objects *objects.Objects
+	catalog *catalog.Catalog
 }
 
 const localRegion = "us-east-1"
@@ -56,8 +57,8 @@ func connect(opts options) *services {
 	return &services{
 		s3:      storage,
 		dynamo:  database,
-		objects: awsdrive.NewObjects(storage),
-		catalog: awsdrive.NewCatalog(database, tableName),
+		objects: objects.New(storage),
+		catalog: catalog.New(database, tableName),
 	}
 }
 

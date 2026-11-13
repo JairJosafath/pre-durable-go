@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-durable-execution-sdk-go/durable/durabletest"
 
 	"gdf/internal/drive"
-	"gdf/internal/drivetest"
+	"gdf/internal/drive/drivetest"
 )
 
 func TestFlakyVisionIsRetriedWithoutRealWaiting(t *testing.T) {

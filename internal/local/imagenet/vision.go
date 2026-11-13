@@ -1,6 +1,7 @@
 // Package imagenet recognises image content with an open ImageNet classifier
 // (ResNet-50) served by TensorFlow Serving. It is the local, open-source
-// stand-in for Amazon Rekognition: the same interface, no cloud.
+// stand-in for Amazon Rekognition: the same interface, no cloud. Only
+// cmd/local uses it; nothing that runs in AWS does.
 package imagenet
 
 import (

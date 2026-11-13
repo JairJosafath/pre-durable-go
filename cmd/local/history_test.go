@@ -13,7 +13,7 @@ import (
 
 	"gdf/internal/api"
 	"gdf/internal/drive"
-	"gdf/internal/drivetest"
+	"gdf/internal/drive/drivetest"
 	history "gdf/internal/execution"
 	"gdf/internal/pipeline"
 	"gdf/internal/thumbnail"

@@ -4,10 +4,12 @@ bootstrap
 *.test
 coverage.out
 
-# Local stack data, downloaded models and sample photos
+# Local stack data and the downloaded classifier
 /local/.data/
 /local/models/
-/local/samples/
+
+# Sample photos that the seed scripts download
+/tools/samples/
 
 # Editors and OS
 .idea/

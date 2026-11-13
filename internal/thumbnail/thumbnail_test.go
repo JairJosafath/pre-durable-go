@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"gdf/internal/drive"
-	"gdf/internal/drivetest"
+	"gdf/internal/drive/drivetest"
 	"gdf/internal/thumbnail"
 )
 

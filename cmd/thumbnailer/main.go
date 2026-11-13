@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
-	"gdf/internal/awsdrive"
+	"gdf/internal/aws/objects"
 	"gdf/internal/env"
 	"gdf/internal/thumbnail"
 )
@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("start thumbnailer: %v", err)
 	}
 
-	generator := thumbnail.NewGenerator(awsdrive.NewObjects(s3.NewFromConfig(aws)), bucket)
+	generator := thumbnail.NewGenerator(objects.New(s3.NewFromConfig(aws)), bucket)
 
 	lambda.Start(generator.Generate)
 }

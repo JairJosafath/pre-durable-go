@@ -1,4 +1,6 @@
-package awsdrive
+// Package vision recognises what is in an image with Amazon Rekognition: the
+// labels, and the moderation concerns.
+package vision
 
 import (
 	"context"
@@ -24,8 +26,8 @@ type Vision struct {
 	client *rekognition.Client
 }
 
-// NewVision returns a vision service that uses the given Rekognition client.
-func NewVision(client *rekognition.Client) *Vision {
+// New returns a vision service that uses the given Rekognition client.
+func New(client *rekognition.Client) *Vision {
 	return &Vision{client: client}
 }
 

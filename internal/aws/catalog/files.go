@@ -1,4 +1,4 @@
-package awsdrive
+package catalog
 
 import (
 	"context"

@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"gdf/internal/drive"
-	"gdf/internal/drivetest"
-	"gdf/internal/imagenet"
+	"gdf/internal/drive/drivetest"
+	"gdf/internal/local/imagenet"
 )
 
 const (

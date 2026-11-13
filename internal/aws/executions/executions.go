@@ -1,4 +1,6 @@
-package awsdrive
+// Package executions reads what a durable execution has done so far from the
+// Lambda API.
+package executions
 
 import (
 	"context"
@@ -19,9 +21,9 @@ type Executions struct {
 	client *lambda.Client
 }
 
-// NewExecutions returns a reader of execution histories that uses the given
+// New returns a reader of execution histories that uses the given
 // Lambda client.
-func NewExecutions(client *lambda.Client) *Executions {
+func New(client *lambda.Client) *Executions {
 	return &Executions{client: client}
 }
 

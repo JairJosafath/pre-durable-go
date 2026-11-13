@@ -20,7 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 
-	"gdf/internal/awsdrive"
+	"gdf/internal/aws/objects"
 	"gdf/internal/drive"
 )
 
@@ -191,7 +191,7 @@ func (g *gateway) upload(w http.ResponseWriter, r *http.Request) {
 // localSigner is the api.Signer the Presigner handler gets on this machine.
 // The handler asks it for two kinds of URL:
 //
-//   - DownloadURL is not written here. Embedding *awsdrive.Objects gives
+//   - DownloadURL is not written here. Embedding *objects.Objects gives
 //     localSigner every method of the real object store, so a download is a
 //     presigned URL of the bucket, exactly as in AWS.
 //   - UploadURL is replaced below. It returns the address of this server's
@@ -203,7 +203,7 @@ func (g *gateway) upload(w http.ResponseWriter, r *http.Request) {
 // Sending the upload through this server lets it store the file and start
 // the workflow itself (see upload).
 type localSigner struct {
-	*awsdrive.Objects
+	*objects.Objects
 
 	// host is where this server listens, such as localhost:8080.
 	host string

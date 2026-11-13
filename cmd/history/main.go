@@ -12,7 +12,8 @@ import (
 	lambdaapi "github.com/aws/aws-sdk-go-v2/service/lambda"
 
 	"gdf/internal/api"
-	"gdf/internal/awsdrive"
+	"gdf/internal/aws/catalog"
+	"gdf/internal/aws/executions"
 	"gdf/internal/env"
 )
 
@@ -28,8 +29,8 @@ func main() {
 	}
 
 	history := api.NewHistory(
-		awsdrive.NewCatalog(dynamodb.NewFromConfig(aws), table),
-		awsdrive.NewExecutions(lambdaapi.NewFromConfig(aws)),
+		catalog.New(dynamodb.NewFromConfig(aws), table),
+		executions.New(lambdaapi.NewFromConfig(aws)),
 	)
 
 	lambda.Start(history.Handle)
