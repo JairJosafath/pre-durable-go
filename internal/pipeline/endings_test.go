@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"gdf/internal/drive"
-	"gdf/internal/drivetest"
+	"gdf/internal/drive/drivetest"
 )
 
 func TestFailedAnalysisMarksTheUploadFailed(t *testing.T) {

@@ -36,9 +36,9 @@ import (
 	"github.com/aws/aws-durable-execution-sdk-go/durable/durabletest"
 	"github.com/aws/aws-lambda-go/events"
 
-	"gdf/internal/awsdrive"
+	"gdf/internal/aws/catalog"
 	"gdf/internal/drive"
-	"gdf/internal/imagenet"
+	"gdf/internal/local/imagenet"
 	"gdf/internal/pipeline"
 	"gdf/internal/thumbnail"
 )
@@ -151,7 +151,7 @@ func newRunner(workflow *pipeline.Pipeline, services *services) *runner {
 // execute runs the workflow to its end, asking for a review decision on the
 // terminal when the execution suspends to wait for one.
 func execute(
-	ctx context.Context, local *runner, catalog *awsdrive.Catalog, upload drive.Upload,
+	ctx context.Context, local *runner, catalog *catalog.Catalog, upload drive.Upload,
 ) (*durabletest.TestResult, error) {
 	event := uploadedEvent(upload)
 

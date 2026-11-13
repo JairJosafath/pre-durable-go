@@ -1,4 +1,4 @@
-package awsdrive_test
+package executions_test
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 
-	"gdf/internal/awsdrive"
+	"gdf/internal/aws/executions"
 	"gdf/internal/drive"
 	"gdf/internal/execution"
 )
@@ -45,7 +45,7 @@ const noSuchExecution = `{"Type": "User", "Message": "Durable Execution does not
 
 // executionsAnswering returns a history reader whose Lambda answers with
 // answer, and the request URLs it received.
-func executionsAnswering(t *testing.T, answer http.HandlerFunc) (*awsdrive.Executions, *[]string) {
+func executionsAnswering(t *testing.T, answer http.HandlerFunc) (*executions.Executions, *[]string) {
 	t.Helper()
 
 	var received []string
@@ -65,7 +65,7 @@ func executionsAnswering(t *testing.T, answer http.HandlerFunc) (*awsdrive.Execu
 		RetryMaxAttempts: 1,
 	})
 
-	return awsdrive.NewExecutions(client), &received
+	return executions.New(client), &received
 }
 
 // inTwoPages answers with the first page, and with the second one to the

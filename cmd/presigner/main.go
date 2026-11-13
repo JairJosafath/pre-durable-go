@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"gdf/internal/api"
-	"gdf/internal/awsdrive"
+	"gdf/internal/aws/objects"
 	"gdf/internal/env"
 )
 
@@ -25,7 +25,7 @@ func main() {
 		log.Fatalf("start presigner: %v", err)
 	}
 
-	presigner := api.NewPresigner(awsdrive.NewObjects(s3.NewFromConfig(aws)), bucket)
+	presigner := api.NewPresigner(objects.New(s3.NewFromConfig(aws)), bucket)
 
 	lambda.Start(presigner.Handle)
 }

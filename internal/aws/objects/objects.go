@@ -1,4 +1,11 @@
-package awsdrive
+// Package objects keeps the uploads and their thumbnails in S3.
+//
+//	objects.go  read, write and delete objects
+//	urls.go     presigned upload and download URLs
+//
+// The adapter only needs an endpoint that speaks the S3 API, so the local
+// stack uses it against SeaweedFS.
+package objects
 
 import (
 	"bytes"
@@ -18,8 +25,8 @@ type Objects struct {
 	presign *s3.PresignClient
 }
 
-// NewObjects returns an object store that uses the given S3 client.
-func NewObjects(client *s3.Client) *Objects {
+// New returns an object store that uses the given S3 client.
+func New(client *s3.Client) *Objects {
 	return &Objects{client: client, presign: s3.NewPresignClient(client)}
 }
 

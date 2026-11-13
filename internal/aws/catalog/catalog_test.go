@@ -1,4 +1,4 @@
-package awsdrive_test
+package catalog_test
 
 // These tests point the real DynamoDB client at a local HTTP server. They
 // check what the adapter asks DynamoDB for and what it makes of the answer,
@@ -16,7 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
-	"gdf/internal/awsdrive"
+	"gdf/internal/aws/catalog"
 	"gdf/internal/drive"
 )
 
@@ -35,7 +35,7 @@ type putItem struct {
 
 // catalogAnswering returns a catalog whose DynamoDB answers every request
 // with the given status and body, and the requests it received.
-func catalogAnswering(t *testing.T, status int, body string) (*awsdrive.Catalog, *[]putItem) {
+func catalogAnswering(t *testing.T, status int, body string) (*catalog.Catalog, *[]putItem) {
 	t.Helper()
 
 	var received []putItem
@@ -63,7 +63,7 @@ func catalogAnswering(t *testing.T, status int, body string) (*awsdrive.Catalog,
 		RetryMaxAttempts: 1,
 	})
 
-	return awsdrive.NewCatalog(client, "primedrive"), &received
+	return catalog.New(client, "primedrive"), &received
 }
 
 func beerPhoto(run string) drive.File {

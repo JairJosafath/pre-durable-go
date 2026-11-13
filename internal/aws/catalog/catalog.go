@@ -1,4 +1,14 @@
-package awsdrive
+// Package catalog keeps the PrimeDrive catalog in DynamoDB: the file records
+// and the label index of every drive.
+//
+//	catalog.go  the table layout, and how an item is written
+//	files.go    the file records
+//	index.go    the label index
+//	items.go    the items and their keys
+//
+// The adapter only needs an endpoint that speaks the DynamoDB API, so the
+// local stack uses it against DynamoDB Local.
+package catalog
 
 import (
 	"context"
@@ -25,8 +35,8 @@ type Catalog struct {
 	table  string
 }
 
-// NewCatalog returns a catalog stored in the given table.
-func NewCatalog(client *dynamodb.Client, table string) *Catalog {
+// New returns a catalog stored in the given table.
+func New(client *dynamodb.Client, table string) *Catalog {
 	return &Catalog{client: client, table: table}
 }
 

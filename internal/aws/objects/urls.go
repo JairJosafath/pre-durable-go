@@ -1,4 +1,4 @@
-package awsdrive
+package objects
 
 import (
 	"context"

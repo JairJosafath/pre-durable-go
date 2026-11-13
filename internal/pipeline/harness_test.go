@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 
 	"gdf/internal/drive"
-	"gdf/internal/drivetest"
+	"gdf/internal/drive/drivetest"
 	"gdf/internal/pipeline"
 	"gdf/internal/thumbnail"
 )

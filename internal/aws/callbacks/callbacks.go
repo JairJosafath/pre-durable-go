@@ -1,4 +1,6 @@
-package awsdrive
+// Package callbacks delivers review decisions to suspended durable
+// executions, through the Lambda API.
+package callbacks
 
 import (
 	"context"
@@ -18,8 +20,8 @@ type Callbacks struct {
 	client *lambda.Client
 }
 
-// NewCallbacks returns a callback sender that uses the given Lambda client.
-func NewCallbacks(client *lambda.Client) *Callbacks {
+// New returns a callback sender that uses the given Lambda client.
+func New(client *lambda.Client) *Callbacks {
 	return &Callbacks{client: client}
 }
 

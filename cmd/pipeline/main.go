@@ -17,7 +17,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/rekognition"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
-	"gdf/internal/awsdrive"
+	"gdf/internal/aws/catalog"
+	"gdf/internal/aws/objects"
+	"gdf/internal/aws/vision"
 	"gdf/internal/drive"
 	"gdf/internal/env"
 	"gdf/internal/pipeline"
@@ -61,9 +63,9 @@ func newWorkflow(ctx context.Context) (*pipeline.Pipeline, error) {
 	}
 
 	return pipeline.New(
-		awsdrive.NewVision(rekognition.NewFromConfig(aws)),
-		awsdrive.NewCatalog(dynamodb.NewFromConfig(aws), table),
-		awsdrive.NewObjects(s3.NewFromConfig(aws)),
+		vision.New(rekognition.NewFromConfig(aws)),
+		catalog.New(dynamodb.NewFromConfig(aws), table),
+		objects.New(s3.NewFromConfig(aws)),
 		pipeline.Config{
 			ThumbnailerFunction: thumbnailer,
 			ReviewTimeout:       reviewTimeout,
